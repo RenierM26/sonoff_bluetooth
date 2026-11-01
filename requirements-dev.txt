@@ -8,6 +8,6 @@ ruff==0.17.3
 aiousbwatcher==1.1.1; python_version < '3.14'
 aiousbwatcher==1.1.2; python_version >= '3.14'
 pyserial==3.5; python_version < '3.14'
-serialx==1.11.0; python_version >= '3.14'
+serialx==1.15.1; python_version >= '3.14'
 aiohasupervisor==0.3.3; python_version < '3.14'
 aiohasupervisor==0.6.0; python_version >= '3.14'
