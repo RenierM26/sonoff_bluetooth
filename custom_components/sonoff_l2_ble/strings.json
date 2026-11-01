@@ -78,5 +78,20 @@
       "reconfigure_successful": "Connection settings updated.",
       "no_devices": "No supported L2 devices with keys were found. Ensure SonoffLAN is loaded with its devices, try token import, or use manual setup."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Local Bluetooth options",
+        "description": "State is refreshed once at startup. Poll interval 0 disables automatic polling; otherwise use 30-3600 seconds (60 or more recommended). Each refresh opens and closes a local BLE session. Experimental controls add 21 preset effects, controller rhythm modes, effect speed and rhythm sensitivity using native HA entities. These additional commands are source-derived and NOT yet physically validated; autonomous sound response is not proven. No eWeLink app, cloud control or phone/HA audio capture is used.",
+        "data": {
+          "experimental_effects": "Enable experimental effect and controller-rhythm controls",
+          "poll_interval": "State polling interval (seconds; 0 disables)"
+        }
+      }
+    },
+    "error": {
+      "invalid_interval": "Use 0 to disable polling, or an integer from 30 to 3600 seconds."
+    }
   }
 }

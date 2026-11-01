@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
@@ -9,10 +10,18 @@ import probatio as vol
 from bleak.exc import BleakError
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from . import make_transport
-from .const import CONF_ACCOUNT_APIKEY, CONF_DEVICE_APIKEY, CONF_DEVICE_ID, DOMAIN
+from .const import (
+    CONF_ACCOUNT_APIKEY,
+    CONF_DEVICE_APIKEY,
+    CONF_DEVICE_ID,
+    CONF_EXPERIMENTAL,
+    CONF_POLL_INTERVAL,
+    DOMAIN,
+)
 from .discovery import (
     Candidate,
     ImportFailed,
@@ -66,6 +75,11 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Create entries and update credentials without deleting the light."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> L2OptionsFlow:
+        return L2OptionsFlow()
 
     def __init__(self) -> None:
         self._candidates: list[Candidate] = []
@@ -233,5 +247,49 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reconfigure" if reconfigure else "manual",
             data_schema=_schema(existing),
+            errors=errors,
+        )
+
+
+class L2OptionsFlow(config_entries.OptionsFlow):
+    """Local-only experimental controls and optional conservative state polling."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            interval = user_input.get(CONF_POLL_INTERVAL, 0)
+            if (
+                type(interval) not in (int, float)
+                or not math.isfinite(interval)
+                or interval != int(interval)
+                or not (interval == 0 or 30 <= interval <= 3600)
+            ):
+                errors["base"] = "invalid_interval"
+            else:
+                return self.async_create_entry(
+                    title="",
+                    data={
+                        CONF_EXPERIMENTAL: bool(user_input.get(CONF_EXPERIMENTAL, False)),
+                        CONF_POLL_INTERVAL: int(interval),
+                    },
+                )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_EXPERIMENTAL,
+                        default=self.config_entry.options.get(CONF_EXPERIMENTAL, False),
+                    ): bool,
+                    vol.Required(
+                        CONF_POLL_INTERVAL,
+                        default=self.config_entry.options.get(CONF_POLL_INTERVAL, 0),
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            min=0, max=3600, step=30, mode=selector.NumberSelectorMode.BOX
+                        )
+                    ),
+                }
+            ),
             errors=errors,
         )

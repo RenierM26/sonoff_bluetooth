@@ -19,6 +19,7 @@ from .protocol import (
     decrypt,
     request,
 )
+from .state import sanitize_report
 
 
 class GattCharacteristic(Protocol):
@@ -79,13 +80,23 @@ class L2Transport:
         assert result is not None
         return result
 
+    async def read_state(self) -> dict[str, Any]:
+        """Read this fresh connection's unsolicited report without sending an update/query."""
+        result = await self._session(None, read_state=True)
+        assert result is not None
+        return result
+
     async def _session(
-        self, params: dict[str, Any] | list[Any] | None, action: str = "update"
+        self,
+        params: dict[str, Any] | list[Any] | None,
+        action: str = "update",
+        *,
+        read_state: bool = False,
     ) -> dict[str, Any] | None:
         async with self.lock:
             client = await self.factory()
             try:
-                return await self._connected_session(client, params, action)
+                return await self._connected_session(client, params, action, read_state=read_state)
             finally:
                 # Cleanup failure must not mask the command/authentication result.
                 with suppress(Exception):
@@ -93,7 +104,12 @@ class L2Transport:
                         await client.disconnect()
 
     async def _connected_session(
-        self, client: GattClient, params: dict[str, Any] | list[Any] | None, action: str
+        self,
+        client: GattClient,
+        params: dict[str, Any] | list[Any] | None,
+        action: str,
+        *,
+        read_state: bool = False,
     ) -> dict[str, Any] | None:
         service = client.services.get_service(SERVICE)
         if service is None:
@@ -114,6 +130,8 @@ class L2Transport:
             except ProtocolError as err:
                 queue.put_nowait(err)
 
+        early_reports: list[bytes] = []
+
         async def exchange(
             packet: bytes, expected: int, sequence: str | None = None
         ) -> bytes | dict[str, Any]:
@@ -131,6 +149,8 @@ class L2Transport:
                         raise item
                     command, body = item
                     if command != expected:
+                        if read_state and command == 16:
+                            early_reports.append(body)
                         continue
                     if sequence is None:
                         return body
@@ -153,6 +173,29 @@ class L2Transport:
         token_reply = await exchange(auth_token(self.device_apikey, app_code, challenge), 3)
         if not isinstance(token_reply, bytes) or not token_reply or token_reply[0] != 0:
             raise ProtocolError("L2 Bluetooth authentication was rejected")
+        if read_state:
+            # Reports buffered during authentication are from this fresh session.
+            # Never reuse reports from a control session or a previous connection.
+            async with asyncio.timeout(4):
+                while True:
+                    if early_reports:
+                        body = early_reports.pop(0)
+                    else:
+                        item = await queue.get()
+                        if isinstance(item, ProtocolError):
+                            raise item
+                        command, body = item
+                        if command != 16:
+                            continue
+                    try:
+                        message = json.loads(decrypt(body, self.device_apikey))
+                    except ValueError, TypeError:
+                        raise ProtocolError("Invalid L2 state JSON") from None
+                    if not isinstance(message, dict):
+                        raise ProtocolError("Invalid L2 state object")
+                    if "params" not in message:
+                        continue  # ACK-only messages are never state.
+                    return sanitize_report(message, self.device_id)
         if params is None:
             return None
         sequence, packet = request(

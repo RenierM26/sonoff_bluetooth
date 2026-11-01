@@ -39,3 +39,16 @@ Remaining checks: full live-HA custom-integration installation/service calls,
 long-duration reliability, other L2 firmware, shared accounts, power cycling,
 and Internet-blocked operation. Simulated peer/unit tests and HA import/config
 flow tests do not replace those hardware checks.
+
+## v0.4.0 evidence boundary
+
+Startup/manual/polled fresh-state reads now use the previously observed session
+report path. Their new integration/coordinator implementation has simulated-peer
+and native HA entity tests, not a new installed-HA hardware acceptance trial.
+
+The opt-in 21 preset effects, per-mode speed/brightness, rhythm presets and
+sensitivity are source-derived and software-tested only. Their visible output,
+accepted slider ranges, and sound response with the phone/app closed still need
+an attended trial. No new hardware commands were sent while implementing them.
+The runtime code uses only local HA/Bluetooth control, but an Internet-blocked
+trial remains separate evidence that has not yet been obtained.

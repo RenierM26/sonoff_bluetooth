@@ -14,7 +14,9 @@ from .transport import GattClient, L2Transport
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-type L2ConfigEntry = ConfigEntry[L2Transport]
+    from .coordinator import L2Coordinator
+
+type L2ConfigEntry = ConfigEntry[L2Coordinator]
 
 
 def make_transport(hass: HomeAssistant, data: Mapping[str, Any]) -> L2Transport:
@@ -55,8 +57,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
     """Set up a UI-configured light without changing its physical state."""
     from homeassistant.const import Platform
 
-    entry.runtime_data = make_transport(hass, entry.data)
-    await hass.config_entries.async_forward_entry_setups(entry, [Platform.LIGHT])
+    from .coordinator import L2Coordinator
+
+    entry.runtime_data = L2Coordinator(hass, entry, make_transport(hass, entry.data))
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    # Best effort: an offline strip must not prevent adding its retry button/light.
+    await entry.runtime_data.async_refresh()
+    await hass.config_entries.async_forward_entry_setups(
+        entry, [Platform.LIGHT, Platform.BUTTON, Platform.NUMBER]
+    )
     return True
 
 
@@ -64,4 +73,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
     """Unload the platform; the transport holds no persistent connection."""
     from homeassistant.const import Platform
 
-    return await hass.config_entries.async_unload_platforms(entry, [Platform.LIGHT])
+    return await hass.config_entries.async_unload_platforms(
+        entry, [Platform.LIGHT, Platform.BUTTON, Platform.NUMBER]
+    )
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> None:
+    """Apply local options without replacing the light/config entry identity."""
+    await hass.config_entries.async_reload(entry.entry_id)

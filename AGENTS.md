@@ -22,3 +22,11 @@
   tests for every setup path and reconfiguration.
 - Latest HA and optional HA-manifest dependency pins are coordinated; update them
   with HACS metadata/docs/CI together, not via isolated dependency bumps.
+
+- Runtime uses L2Coordinator shared by light/button/number; no cloud code belongs
+  in those modules. Fresh-session readback must not reuse a command session's
+  pre-command report or accept an ACK-only query as state.
+- Preserve per-mode speedXX/brightXX fields and construct mode-dependent commands
+  inside the coordinator operation lock. New effects/rhythm stay opt-in until
+  hardware-validated; do not imply standalone audio response from discrete config
+  commands alone. Number adjustments must not explicitly turn the strip on.

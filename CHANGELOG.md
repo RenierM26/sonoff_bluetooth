@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0 — Native local state and experimental effects
+
+- HA DataUpdateCoordinator and shared native light/button/number entities; no
+  post-setup dependency on eWeLink, SonoffLAN, token refresh or a vendor app.
+- Best-effort startup read, native Refresh state button, optional 30-3600s polling
+  (disabled by default), fresh-session report validation and explicit
+  reported/assumed state. Missing state/ACK-only replies never fabricate state.
+- Serialize report reads and mode-dependent command construction with controls;
+  drop stale report fields on fresh reads and preserve retry capability on failure.
+- Opt-in experimental controls: exact 21 L2 presets, effect-preserving brightness,
+  native speed number, four controller-rhythm effect presets and sensitivity number.
+- New effects/rhythm and installed-HA refresh behaviour are software-tested only.
+  Standalone sound response is not proven; no audio feed or media-player sync added.
+- Native options flow with frontend serialization coverage; no lighting commands
+  sent during setup/reconfiguration or any state refresh.
+
 ## 0.3.1 — Latest Home Assistant only
 
 - Target HA 2026.10.4 (latest stable checked 2026-11-01) and Python 3.14 only.

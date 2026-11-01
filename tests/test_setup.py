@@ -18,20 +18,31 @@ DATA = {
 }
 
 
-async def test_setup_and_unload_forward_only_light_platform():
+async def test_setup_and_unload_forward_native_platforms():
     hass = SimpleNamespace(
         config_entries=SimpleNamespace(
             async_forward_entry_setups=AsyncMock(),
             async_unload_platforms=AsyncMock(return_value=True),
         )
     )
-    entry = SimpleNamespace(data=DATA)
-    with patch("custom_components.sonoff_l2_ble.make_transport", return_value="transport"):
+    entry = Mock(data=DATA, options={}, title="Strip")
+    coordinator = Mock(async_refresh=AsyncMock())
+    with (
+        patch("custom_components.sonoff_l2_ble.make_transport", return_value="transport"),
+        patch(
+            "custom_components.sonoff_l2_ble.coordinator.L2Coordinator", return_value=coordinator
+        ),
+    ):
         assert await async_setup_entry(hass, entry)
-    assert entry.runtime_data == "transport"
-    hass.config_entries.async_forward_entry_setups.assert_awaited_once_with(entry, ["light"])
+    assert entry.runtime_data is coordinator
+    coordinator.async_refresh.assert_awaited_once()
+    hass.config_entries.async_forward_entry_setups.assert_awaited_once_with(
+        entry, ["light", "button", "number"]
+    )
     assert await async_unload_entry(hass, entry)
-    hass.config_entries.async_unload_platforms.assert_awaited_once_with(entry, ["light"])
+    hass.config_entries.async_unload_platforms.assert_awaited_once_with(
+        entry, ["light", "button", "number"]
+    )
 
 
 async def test_light_platform_adds_entity_without_device_command():

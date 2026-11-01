@@ -4,7 +4,8 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 Local Bluetooth control of a **SONOFF L2 LED strip (UIID 137)** with its original
-firmware. Provides a Home Assistant RGB light with **on/off, colour and brightness**.
+firmware. Provides a native Home Assistant RGB light with **on/off, colour and brightness**,
+a **refresh button**, and opt-in experimental effects/rhythm controls.
 Currently supports L2 only; the repository name does **not** imply compatibility
 with every SONOFF Bluetooth product. L2 Lite, L1 and L3 have not been verified.
 
@@ -160,21 +161,65 @@ data:
   brightness_pct: 30
 ```
 
-State is initially unknown and then **assumed**, reflecting the last acknowledged
-HA command. IR/app changes and power cycles are not continuously synchronised.
-A successful GATT write alone is not accepted as success: the integration waits
-for a matching decrypted device ACK before updating HA state. A timeout can mean
-the command was applied but its ACK was lost; light commands are not blindly replayed.
+### Local state refresh
 
-The L2 can report state when a fresh authenticated session opens, but query ACKs
-can omit state and notifications can describe the pre-command state. The hardware
-test used a subsequent connection for readback. Continuous push synchronisation
-and polling are **not** implemented in the shipped light entity.
+At integration startup, a best-effort read opens a **fresh authenticated Bluetooth
+session**, waits up to four seconds after authentication for the device's state
+report, then disconnects. If no report is received, state remains unknown; this
+never powers on or changes the strip. A **Refresh state** button repeats the read.
+It remains usable after a failed read, and an unsuccessful read does not strand
+light commands. It may take additional time to establish/authenticate the BLE
+connection before the four-second report window starts.
+
+Fresh reports replace cached fields: an OFF-only report does not invent a colour
+or mode. The light reflects **reported state** after a valid read, and **assumed
+state** after an acknowledged control or failed/uncertain refresh/control. A
+successful GATT write or query ACK without parameters is never state evidence.
+Pre-command notifications from a control session never overwrite an ACKed target.
+A lost ACK can still mean a command was applied, so light commands are not blindly
+replayed. Refresh to check the resulting state.
+
+Optional polling is available in the integration's **Options/Configure** dialog:
+**0** (default) disables it; **30-3600 seconds** enables it (60+ recommended).
+This is periodic refresh, not continuous push synchronisation. Each operation
+releases its BLE/proxy slot; no competing scanner or permanent BLE connection is
+created. Local control needs only HA, its Bluetooth adapter/proxy and the L2—not
+SonoffLAN, an eWeLink app, a cloud session, token refresh, or Internet access after
+credentials are imported. Internet-blocked operation still awaits a physical test.
+
+### Experimental native effects and rhythm
+
+In the same options dialog, enable **experimental effect and controller-rhythm
+controls**. This is **off by default**: their payloads are traced from the exact
+L2/UIID137 app path but have not yet been physically validated.
+
+- The normal HA light effect picker exposes **21 presets**, **Solid**, and four
+  controller rhythm presets (Classic, Mild, Dynamic, Disco).
+- Use `light.turn_on` with `effect: Reading`, for example, or include the effect
+  in an HA scene/automation. No separate cloud/app control surface is introduced.
+- The native **Effect speed (experimental)** number is available in a preset
+  effect (1-100%). Brightness changes preserve that effect's mode and use its
+  per-mode brightness field instead of silently switching back to static RGB.
+- The native **Rhythm sensitivity (experimental)** number is available in rhythm
+  mode (0-100%). Numbers change settings without explicitly powering on an OFF
+  strip. Selecting an effect with `light.turn_on` does power it on.
+- Selecting an RGB colour or **Solid** exits effects/rhythm. RGB and an effect
+  cannot be requested in one action. Brightness in rhythm/unknown modes is rejected
+  until its behaviour is validated; choose an RGB colour first.
+
+Rhythm is exposed as **controller configuration through native HA entities**.
+The traced UIID137 rhythm screen sends discrete mode/sensitivity updates; it does
+not establish a phone-audio stream. This implementation never captures audio or
+uses a vendor app/service to feed it. **Whether this controller autonomously reacts
+to sound with the phone closed is still unverified**; no claim of music response
+or HA `media_player` beat synchronisation is made. Keep the opt-in disabled until
+an attended hardware trial if you require validated behaviour only.
 
 ## Limitations and troubleshooting
 
-- **Only L2/UIID 137 is verified.** Effects/music, timers, transitions, power-on
-  behaviour and factory commissioning are not exposed.
+- **Only basic L2/UIID 137 controls are physically verified.** Effects/rhythm are
+  opt-in experiments, not verified device capabilities. Device-resident timers,
+  transitions, power-on behaviour and factory commissioning are not exposed.
 - **Cannot connect:** confirm the proxy is active/connectable, the strip remains
   powered, and another phone/client is not connected. Improve proximity first.
 - **Authentication fails:** check `apikey` versus `devicekey`, BLE versus Wi-Fi
@@ -183,7 +228,7 @@ and polling are **not** implemented in the shipped light entity.
   BLE integration; adding this integration does not replace it automatically.
 - **Proxy ownership:** a standalone test process must not compete with HA for its
   proxy's single Bluetooth subscriber. Routine operation stays inside HA's manager.
-- **Unreliable state:** assumed state is intentional; a query ACK is not readback.
+- **Stale state:** use Refresh state or optional polling; a query ACK is not readback.
 - Do not replace switch firmware or disconnect its mains wiring to install this
   integration. This integration neither flashes devices nor changes relay settings.
 

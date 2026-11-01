@@ -133,3 +133,27 @@ visible output without a physical check.
 - HA Bluetooth development guidance: https://developers.home-assistant.io/docs/bluetooth/
 - ESPHome active proxy: https://esphome.io/components/bluetooth_proxy/
 - Hermes bytecode tooling: https://github.com/P1sec/hermes-dec
+
+## Source-derived experimental effects (v0.4.0; not hardware-validated)
+
+The UIID137 helper in module **5273** `recommendScene` binds exactly 21 presets,
+modes **6-26** (not the extra 27-30 fields in the shared protocol). Preset selection
+uses module **4826** `getSetModeParams`: switch ON, mode, and its `speedXX`/`brightXX`
+values with a zero-padded mode suffix. Speed editing uses
+`getCurrentSceneModeParams`; brightness editing uses
+`getCurrentSceneModeBrightParams`, preserving that mode rather than mode 0.
+The scene editor speed slider in module **11159** uses 1-100.
+
+The UIID137 action bar routes to **RhythmModeScreen**, module **11167**. Its mode
+IDs are Classic=0, Mild=1, Dynamic=2, Disco=3; sensitivity slider range is 0-100.
+Its control path calls module 4826 `getRhythmicParams`, resulting in switch ON,
+mode=4, rhythmMode and rhythmSensitive, sent through the existing request path.
+The screen configures device parameters rather than capturing/streaming audio.
+This supports implementing native HA effect/number configuration, but does **not**
+prove autonomous controller sound response without the phone. That requires a
+physical test. No HA audio analysis or media-player integration is implemented.
+
+Exact experimental mode IDs and authored English labels live in `state.py`.
+No decompiled vendor code is distributed. Brightness in rhythm mode is deliberately
+not offered as a guessed field. Speed/sensitivity edits omit switch ON, so changing
+a parameter does not explicitly power up an OFF strip.

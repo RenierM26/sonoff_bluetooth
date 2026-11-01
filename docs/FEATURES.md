@@ -1,41 +1,45 @@
-# L2 app feature comparison and priorities
+# L2 feature support and remaining work
 
-Assessed 2026-11-01 against the previously extracted eWeLink 5.29.1 UIID137
-binding (module 5272), screen (8411) and its protocol (4826). This is an assessment,
-not a claim that extra BLE commands have been hardware-tested. No new controls
-were sent during this review. Only on/off, RGB and brightness have physical
-command/readback plus owner-confirmed visible evidence; see HARDWARE-TEST.md.
+Assessed against extracted eWeLink 5.29.1 UIID137 binding (module 5272), screen
+(8411), preset/action helpers (5273), protocol (4826), scene editor (11159) and
+rhythm screen (11167). Only on/off, RGB and brightness have physical command,
+readback and owner-confirmed visible evidence; see HARDWARE-TEST.md. Code and
+simulated-peer tests do not replace a hardware trial.
 
-## What is missing?
-
-| Feature | Current integration | Evidence and suggested HA implementation |
+| Feature | v0.4.0 status | Evidence / native HA behaviour |
 | --- | --- | --- |
-| On/off, RGB, brightness | Implemented | Verified on one physical L2. |
-| Built-in scene/effect selection | Missing | UIID137 template exposes `recommendScene` and `ACTION_MORESCENE137_KEY`; protocol has `getSetModeParams` and `getCurrentSceneModeParams`. Map the model-specific presets to `LightEntity.effect_list`; validate every offered mode before declaring it supported. Do not reuse another strip's mode table. |
-| Effect speed and effect-specific brightness | Missing | Protocol exposes speed/brightness state per scene and getters such as `getSetSpeedParams` / `getCurrentSceneModeBrightParams`. Use a number entity for speed; preserve the active mode when changing brightness instead of forcing mode 0. Ranges and firmware behaviour still need validation. |
-| Music/rhythm mode and sensitivity | Missing; candidate for investigation | Bound protocol contains `getRhythmicParams`, `rhythmMode` and `rhythmSensitive` (mode 4). Trace the UIID137 music caller and audio source before promising autonomous operation: a mode/sensitivity command does not prove the controller can react without phone audio/microphone processing. Possible select/number entities once validated. |
-| State refresh after IR/app changes or restart | Missing | Device state was reported on a fresh authenticated connection in the earlier physical test. A query ACK can contain no state, and pre-command notifications can be stale. Consume fresh reports deliberately; a refresh action and optional conservative polling are safer first steps than claiming continuous push sync. Keep unknown/assumed semantics until reports are validated. |
-| Saved colours / favourites / custom scenes | Missing as vendor-specific management | UI/protocol include custom-colour tags and DIY-scene fields, but device-resident versus account/app storage and model/firmware applicability are not established. Use normal HA scenes/scripts for saved RGB/brightness combinations now; investigate vendor DIY effects separately. |
-| White / colour-temperature-style UI | Not exposed | UIID137 screen includes CCT/W panels; protocol has mode-2 colour-temperature and mode-3 brightness helpers. This is not evidence that the RGB L2 has dedicated white channels or a physically calibrated Kelvin range. Validate the actual rendering before exposing any white emulation; do not advertise genuine CCT capability based on field names alone. |
-| Schedules, countdowns, groups and automations | Use HA's native features | HA already supplies local automation, timers, scenes and light groups. Prefer these to duplicating vendor scheduling/cloud APIs. Device-resident BLE scheduling, including persistence when HA is offline, has not been established. A JavaScript UI `timer` is not proof of a device timer command. |
-| Smooth transitions | Not implemented | No validated native duration/fade command in the recovered L2 control path. Software fades would add repeated BLE commands and connection overhead; lower priority than reliable effects and state. |
+| On/off, RGB, brightness | Implemented; physically verified on one L2 | Native RGB light; matching successful ACK required. |
+| Fresh state after restart / IR / app changes | Implemented; new integration path software-tested | Best-effort startup read and native Refresh state button use a fresh authenticated BLE session. Optional polling defaults OFF. No ACK-only query or old command-session report is accepted as readback. |
+| Preset effects | Implemented; opt-in experimental | Exactly 21 UIID137 presets (modes 6-26), not every field in the shared protocol. Normal HA light effect picker / `light.turn_on` / scenes. Physical output still needs validation. |
+| Effect speed / brightness | Implemented; opt-in experimental | Native speed number (1-100); per-mode `speedXX`/`brightXX` preserve the active effect. Commands are built inside the shared operation lock. No guessed brightness update in rhythm/unknown modes. |
+| Controller rhythm mode / sensitivity | Implemented; opt-in experimental | Four discrete controller modes and sensitivity 0-100 through native HA effect/number entities. The traced screen sends device configuration, not phone audio. Autonomous sound response without a phone is **unverified**. No HA audio capture or `media_player` beat sync is implemented. |
+| Colour favourites / HA scenes | Available using native HA features | Save RGB/brightness/effect combinations in HA scenes/scripts. No vendor account storage needed. |
+| Vendor DIY scenes | Not implemented | DIY fields exist, but device-resident versus app/account storage and exact firmware applicability need tracing. |
+| White / colour-temperature UI | Not implemented | UI/protocol have CCT/W helpers, but an RGB L2 has no demonstrated calibrated Kelvin range or dedicated white channels. Do not advertise genuine CCT based on field names. |
+| Schedules, countdowns, groups | Use native HA automations/timers/groups | These require HA to be running. Device-resident BLE schedules/countdowns that persist independently of HA are not established. A JavaScript UI timer is not a device timer command. |
+| Smooth transitions | Not implemented | No validated native duration/fade command. Software fades would add repeated BLE commands and connection overhead. |
 
-## Recommended order
+## Runtime independence
 
-1. **State refresh/recovery:** useful after HA startup and IR/app changes; validate
-   freshness and avoid stealing a long-lived BLE connection from other clients.
-2. **Preset effects**, followed by **speed and effect-preserving brightness**:
-   the largest clearly identified app-control gap.
-3. **Music/rhythm controls**, after resolving the microphone/audio-processing path
-   and proving the desired behaviour without a phone/cloud dependency.
-4. Optional virtual-white UI and vendor DIY scenes only after model-specific
-   validation. Ordinary colour favourites are already covered by HA scenes.
+After credentials are imported, the integration uses only HA's local Bluetooth
+adapters/proxies and the L2. No SonoffLAN runtime object, account token, cloud
+refresh, vendor app/service or audio feed is needed by the control code. Rhythm
+means native HA controls **configure the controller**; it does not mean the
+integration analyses music. Leave experimental controls disabled until their
+hardware behaviour is validated if you need verified functions only.
 
-Cloud account administration, sharing, factory Wi-Fi commissioning and firmware
-updates are intentionally outside the local-Bluetooth integration's scope. This
-comparison does not establish BLE support for power-on behaviour, strip hardware
-parameters or every field present in the shared protocol class.
+## Next validation priorities
 
-For each addition: trace the exact UIID137 caller and payload, add synthetic
-codec/ACK/error tests, then perform an attended hardware test with restoration of
-the original state before marking the feature supported.
+1. Installed-HA acceptance for startup/button/polled state freshness and recovery.
+2. Attended validation of effect mode IDs, output, speed and per-mode brightness.
+3. Controller rhythm response with the vendor app closed and no phone audio
+   processing, followed by an Internet-blocked trial. Until then do not claim
+   autonomous music response or offline hardware proof.
+4. Only then consider virtual white, vendor DIY scenes or transitions. Native HA
+   scenes/automations already cover most saved-colour/scheduling needs.
+
+Cloud administration/sharing, factory Wi-Fi commissioning, firmware updates and
+unverified strip hardware settings are intentionally outside the local BLE scope.
+For every new device behaviour, trace the exact model caller/payload, add codec,
+ACK/error tests, and perform an attended test restoring the original state before
+marking the behaviour physically supported.

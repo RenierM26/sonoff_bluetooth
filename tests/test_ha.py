@@ -9,17 +9,16 @@ pytest.importorskip("homeassistant")
 from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.sonoff_l2_ble.config_flow import L2ConfigFlow
+from custom_components.sonoff_l2_ble.coordinator import L2Coordinator
 from custom_components.sonoff_l2_ble.light import L2Light
 from custom_components.sonoff_l2_ble.protocol import ProtocolError
 
 
 def entity():
     transport = SimpleNamespace(send_update=AsyncMock(return_value={"error": 0}))
-    light = L2Light(
-        SimpleNamespace(
-            runtime_data=transport, data={"address": "AA:BB:CC:DD:EE:FF"}, title="Test strip"
-        )
-    )
+    entry = Mock(data={"address": "AA:BB:CC:DD:EE:FF"}, title="Test strip", options={})
+    entry.runtime_data = L2Coordinator(Mock(), entry, transport)
+    light = L2Light(entry)
     light.async_write_ha_state = Mock()
     return light, transport
 
