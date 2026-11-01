@@ -65,10 +65,10 @@ def test_packet_limits_and_unknown_backend_fallback(mtu, response, limit, expect
 
 
 @pytest.mark.parametrize("response", [True, False])
-async def test_opt_in_reduces_writes_preserves_exact_frames_and_ack_gate(response):
+async def test_default_larger_writes_reduce_calls_preserving_frames_and_ack_gate(response):
     peers = [PacketPeer(response=response, limit=64) for _ in range(2)]
     transports = [bridge(peer) for peer in peers]
-    transports[1].mtu_writes = True
+    transports[0].mtu_writes = False
     for transport in transports:
         await transport.send_update({"switch": "on", "mode": 7, "speed07": 60})
     assert len(peers[1].writes) < len(peers[0].writes)
@@ -265,3 +265,52 @@ def test_unimplemented_optional_backend_properties_keep_conservative_writes(attr
     ):
         assert write_chunk_size(client, characteristic, False) == 20
         assert write_chunk_size(client, characteristic, True) == 20
+
+
+@pytest.mark.parametrize(
+    "saved,expected", [({}, True), ({"mtu_writes": False}, False), ({"mtu_writes": True}, True)]
+)
+async def test_mtu_default_and_explicit_fallback_agree_in_runtime_form_and_diagnostics(
+    saved, expected
+):
+    entry = Mock(data=DATA, options=saved)
+    peer = PacketPeer()
+    factory = AsyncMock(return_value=peer)
+    transport = L2Transport(
+        factory, "1000000000", KEY, KEY, mtu_writes=saved.get("mtu_writes", True)
+    )
+    entry.runtime_data = L2Coordinator(Mock(), entry, transport)
+    await transport.send_update({"switch": "on"})
+    assert transport.timings["update"].chunk_size == (244 if expected else 20)
+    flow = L2OptionsFlow()
+    with patch.object(L2OptionsFlow, "config_entry", new_callable=PropertyMock, return_value=entry):
+        form = await flow.async_step_init()
+        encoded = FlowManagerIndexView(Mock())._prepare_result_json(form)
+        assert encoded["data_schema"][-1]["default"] is expected
+        assert (await flow.async_step_init(form["data_schema"]({})))["data"][
+            "mtu_writes"
+        ] is expected
+    result = await async_get_config_entry_diagnostics(Mock(data={}), entry)
+    assert result["options"]["mtu_writes"] is expected
+    assert L2Transport(factory, "1000000000", KEY, KEY).mtu_writes is True
+    assert (
+        make_transport(
+            Mock(), {**DATA, "name": "Synthetic", "device_apikey": KEY, "account_apikey": KEY}
+        ).mtu_writes
+        is True
+    )
+
+
+async def test_onboarding_authentication_keeps_conservative_packet_policy():
+    from test_config_flow import DATA as config_data
+    from test_config_flow import flow
+
+    transport = Mock(authenticate=AsyncMock())
+    instance = flow()
+    with patch(
+        "custom_components.sonoff_l2_ble.config_flow.make_transport", return_value=transport
+    ) as make:
+        result = await instance.async_step_manual(config_data)
+    assert result["type"] == "create_entry"
+    assert make.call_args.kwargs == {"mtu_writes": False}
+    transport.authenticate.assert_awaited_once()

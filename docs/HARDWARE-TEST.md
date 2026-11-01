@@ -79,3 +79,19 @@ before disconnect and session timings are regression-tested with synthetic peers
 Larger MTU-aware writes remain off by default and are not hardware-validated; no
 physical latency improvement is claimed. See PERFORMANCE.md for comparison and
 rollback. The owner reports above do not automatically cover this new packet mode.
+
+
+## v0.6.1 default promotion — 2026-11-01
+
+Following the v0.6.0 implementation, the owner reported improved responsiveness.
+Read-only HA diagnostics confirmed v0.6.0 with larger writes enabled, a 244-byte
+limit, successful fresh polling read (two writes, 0.50 s), a matching control ACK
+(four writes, 1.09 s through ACK) and successful cleanup. Recent log checks found
+only HA's standard custom-integration loader warnings for SONOFF Bluetooth; no
+matching SONOFF/Bleak/Bluetooth runtime errors were present in the checked window.
+
+This supersedes the earlier unvalidated-larger-packet boundary on the tested L2.
+The owner requested making it the default; v0.6.1 does so for unset choices while
+preserving explicit false and an accessible 20-byte fallback. Credential checks
+still use 20-byte writes. These snapshots are not a measured speedup percentage,
+long-run certification, or proof of every firmware/preset. See PERFORMANCE.md.

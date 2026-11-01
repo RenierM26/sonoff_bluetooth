@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 
-from .const import CONF_ACCOUNT_APIKEY, CONF_DEVICE_APIKEY, CONF_DEVICE_ID, CONF_MTU_WRITES
+from .const import (
+    CONF_ACCOUNT_APIKEY,
+    CONF_DEVICE_APIKEY,
+    CONF_DEVICE_ID,
+    CONF_MTU_WRITES,
+    DEFAULT_MTU_WRITES,
+)
 from .protocol import ProtocolError
 from .transport import GattClient, L2Transport
 
@@ -20,7 +26,7 @@ type L2ConfigEntry = ConfigEntry[L2Coordinator]
 
 
 def make_transport(
-    hass: HomeAssistant, data: Mapping[str, Any], *, mtu_writes: bool = False
+    hass: HomeAssistant, data: Mapping[str, Any], *, mtu_writes: bool = DEFAULT_MTU_WRITES
 ) -> L2Transport:
     """Use HA's adapters, including existing active ESPHome Bluetooth proxies."""
     from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
@@ -69,7 +75,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
         hass,
         entry,
         make_transport(
-            hass, entry.data, mtu_writes=bool(entry.options.get(CONF_MTU_WRITES, False))
+            hass,
+            entry.data,
+            mtu_writes=bool(entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
         ),
     )
     entry.runtime_data.async_track_presence()
