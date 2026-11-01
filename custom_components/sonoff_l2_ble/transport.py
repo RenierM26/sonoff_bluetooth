@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Protocol
 
+from .const import DEFAULT_MTU_WRITES
 from .protocol import (
     NOTIFY,
     SERVICE,
@@ -57,7 +58,7 @@ def measure(timing: SessionTiming, field: str) -> Iterator[None]:
 
 
 def write_chunk_size(client: GattClient, characteristic: GattCharacteristic, enabled: bool) -> int:
-    """Conservative unless opted in; never exceed MTU, backend limit or 244 bytes."""
+    """Use adapter limits unless explicitly disabled; never exceed MTU/backend/244 bytes."""
     if not enabled:
         return 20
     try:
@@ -115,7 +116,7 @@ class L2Transport:
         device_apikey: str,
         account_apikey: str,
         *,
-        mtu_writes: bool = False,
+        mtu_writes: bool = DEFAULT_MTU_WRITES,
     ) -> None:
         self.factory = factory
         self.device_id = device_id

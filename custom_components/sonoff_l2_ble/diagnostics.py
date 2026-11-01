@@ -16,6 +16,7 @@ from .const import (
     CONF_MTU_WRITES,
     CONF_POLL_INTERVAL,
     DEFAULT_EFFECTS_ENABLED,
+    DEFAULT_MTU_WRITES,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
 )
@@ -225,7 +226,7 @@ async def async_get_config_entry_diagnostics(
                 entry.options.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
             ),
             CONF_POLL_INTERVAL: int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
-            CONF_MTU_WRITES: bool(entry.options.get(CONF_MTU_WRITES, False)),
+            CONF_MTU_WRITES: bool(entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
         },
         "bluetooth": _bluetooth_snapshot(hass, entry),
         "runtime": runtime,

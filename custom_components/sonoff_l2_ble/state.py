@@ -1,4 +1,4 @@
-"""Sanitized L2 reports and source-derived, opt-in effect parameters."""
+"""Sanitized L2 reports and source-derived effect parameters."""
 
 from __future__ import annotations
 

@@ -23,6 +23,7 @@ from .const import (
     CONF_MTU_WRITES,
     CONF_POLL_INTERVAL,
     DEFAULT_EFFECTS_ENABLED,
+    DEFAULT_MTU_WRITES,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
 )
@@ -257,7 +258,8 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ):
                     return self.async_abort(reason="already_configured")
                 try:
-                    await make_transport(self.hass, data).authenticate()
+                    # Keep onboarding/credential recovery independent of faster runtime packets.
+                    await make_transport(self.hass, data, mtu_writes=False).authenticate()
                 except BleakError, TimeoutError, OSError:
                     errors["base"] = "cannot_connect"
                 except ProtocolError:
@@ -300,7 +302,7 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                             user_input.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
                         ),
                         CONF_POLL_INTERVAL: int(interval),
-                        CONF_MTU_WRITES: bool(user_input.get(CONF_MTU_WRITES, False)),
+                        CONF_MTU_WRITES: bool(user_input.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
                     },
                 )
         return self.async_show_form(
@@ -325,7 +327,7 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                     ),
                     vol.Required(
                         CONF_MTU_WRITES,
-                        default=self.config_entry.options.get(CONF_MTU_WRITES, False),
+                        default=self.config_entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES),
                     ): bool,
                 }
             ),

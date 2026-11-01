@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.1 — Validated MTU-aware writes by default
+
+- Enable MTU-aware writes by default after the owner reported improved response
+  and live diagnostics confirmed successful 244-byte-policy read/control on L2.
+- Preserve explicitly saved false as the conservative 20-byte fallback; missing
+  options now resolve consistently to true in transport/runtime/options/diagnostics.
+- Keep onboarding, reconfiguration and reauthentication credential validation at
+  20 bytes so incompatible runtime packets do not block setup/recovery.
+- Remove the hardware-test/default-off option label; document measured snapshots
+  and their single-device/non-benchmark limits. No change to packet caps, ACK
+  validation, no-replay policy, cleanup, identities, effects or polling settings.
+
 ## 0.6.0 — Latency diagnostics and faster HA feedback
 
 - Publish matching-ACK target state to HA before disconnect cleanup, without

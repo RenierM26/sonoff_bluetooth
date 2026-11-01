@@ -103,3 +103,12 @@ relative timing fields extend the existing native diagnostics allowlist. Native
 options serialization, cancellation, negative/stale ACK, partial write, cleanup
 and privacy regressions are covered in tests/test_performance.py. Hardware speed
 and larger-packet compatibility remain unverified; see PERFORMANCE.md.
+
+
+## v0.6.1 default follow-up
+
+Live L2 diagnostics subsequently established successful 244-byte-policy control
+and fresh polling reads, with owner-reported improved responsiveness. Since
+v0.6.1 MTU-aware writes default on for unset choices; explicit false remains the
+conservative fallback. Setup/credential validation stays at 20 bytes. Adapter
+caps, ACK gates and cleanup are unchanged. See HARDWARE-TEST.md for scope.
