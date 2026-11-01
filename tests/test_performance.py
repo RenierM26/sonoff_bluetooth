@@ -226,14 +226,26 @@ async def test_timing_diagnostics_are_read_only_and_explicitly_sanitize_unknown_
 
 @pytest.mark.parametrize("enabled", [False, True])
 async def test_native_mtu_option_roundtrip_and_transport_configuration(enabled):
-    options = {"experimental_effects": True, "poll_interval": 60, "mtu_writes": enabled}
+    options = {
+        "experimental_effects": True,
+        "poll_interval": 60,
+        "mtu_writes": enabled,
+        "reuse_connection": False,
+    }
     flow = L2OptionsFlow()
     with patch.object(
         L2OptionsFlow, "config_entry", new_callable=PropertyMock, return_value=Mock(options=options)
     ):
         form = await flow.async_step_init()
         encoded = FlowManagerIndexView(Mock())._prepare_result_json(form)
-        assert encoded["data_schema"][-1]["default"] is enabled
+        assert (
+            next(
+                field["default"]
+                for field in encoded["data_schema"]
+                if field["name"] == "mtu_writes"
+            )
+            is enabled
+        )
         assert (await flow.async_step_init(options))["data"] == options
     transport = make_transport(
         Mock(),
@@ -286,7 +298,14 @@ async def test_mtu_default_and_explicit_fallback_agree_in_runtime_form_and_diagn
     with patch.object(L2OptionsFlow, "config_entry", new_callable=PropertyMock, return_value=entry):
         form = await flow.async_step_init()
         encoded = FlowManagerIndexView(Mock())._prepare_result_json(form)
-        assert encoded["data_schema"][-1]["default"] is expected
+        assert (
+            next(
+                field["default"]
+                for field in encoded["data_schema"]
+                if field["name"] == "mtu_writes"
+            )
+            is expected
+        )
         assert (await flow.async_step_init(form["data_schema"]({})))["data"][
             "mtu_writes"
         ] is expected

@@ -266,6 +266,7 @@ async def test_options_save_local_only_settings(interval):
         "experimental_effects": True,
         "poll_interval": interval,
         "mtu_writes": True,
+        "reuse_connection": False,
     }
     hass = Mock(config_entries=Mock(async_reload=AsyncMock()))
     entry = Mock(entry_id="synthetic")
@@ -286,6 +287,7 @@ async def test_options_invalid_interval_renders_native_form(interval):
         "experimental_effects",
         "poll_interval",
         "mtu_writes",
+        "reuse_connection",
     }
 
 
@@ -354,7 +356,7 @@ async def test_options_form_preserves_saved_local_preferences():
         return_value=Mock(options={"experimental_effects": True, "poll_interval": 60}),
     ):
         encoded = FlowManagerIndexView(Mock())._prepare_result_json(await options.async_step_init())
-    assert [field["default"] for field in encoded["data_schema"]] == [True, 60, True]
+    assert [field["default"] for field in encoded["data_schema"]] == [True, 60, True, False]
 
 
 async def test_number_mode_change_and_missing_rhythm_identity_are_rejected():
@@ -432,18 +434,25 @@ async def test_effect_defaults_and_legacy_saved_options_agree_across_runtime_for
     with patch.object(L2OptionsFlow, "config_entry", new_callable=PropertyMock, return_value=entry):
         form = await L2OptionsFlow().async_step_init()
         encoded = FlowManagerIndexView(Mock())._prepare_result_json(form)
-        assert [field["default"] for field in encoded["data_schema"]] == [enabled, interval, True]
+        assert [field["default"] for field in encoded["data_schema"]] == [
+            enabled,
+            interval,
+            True,
+            False,
+        ]
         result = await L2OptionsFlow().async_step_init(form["data_schema"]({}))
         assert result["data"] == {
             "experimental_effects": enabled,
             "poll_interval": interval,
             "mtu_writes": True,
+            "reuse_connection": False,
         }
     exported = await async_get_config_entry_diagnostics(Mock(data={}), entry)
     assert exported["options"] == {
         "experimental_effects": enabled,
         "poll_interval": interval,
         "mtu_writes": True,
+        "reuse_connection": False,
     }
     assert exported["runtime"]["polling_enabled"] is bool(interval)
     transport.read_state.assert_not_called()

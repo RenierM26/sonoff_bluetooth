@@ -15,6 +15,7 @@ from .const import (
     CONF_EFFECTS_ENABLED,
     CONF_MTU_WRITES,
     CONF_POLL_INTERVAL,
+    CONF_REUSE_CONNECTION,
     DEFAULT_EFFECTS_ENABLED,
     DEFAULT_MTU_WRITES,
     DEFAULT_POLL_INTERVAL,
@@ -95,11 +96,14 @@ def _transport_timings(transport: Any) -> dict[str, Any]:
     if not isinstance(records, dict):
         return {}
     result: dict[str, dict[str, Any]] = {}
-    for operation in ("auth", "read", "update", "query"):
+    for operation in ("auth", "read", "update", "query", "lease_cleanup"):
         record = records.get(operation)
         if not isinstance(record, SessionTiming):
             continue
         result[operation] = {field: _number(getattr(record, field)) for field in TIMING_FIELDS}
+        for field in ("reused_connection", "retained_connection"):
+            value = getattr(record, field)
+            result[operation][field] = value if type(value) is bool else None
         result[operation]["outcome"] = (
             record.outcome
             if record.outcome in ("in_progress", "success", "auth_failed", "failed", "cancelled")
@@ -108,7 +112,7 @@ def _transport_timings(transport: Any) -> dict[str, Any]:
         result[operation]["disconnect_outcome"] = (
             record.disconnect_outcome
             if record.disconnect_outcome
-            in ("not_attempted", "in_progress", "success", "failed", "cancelled")
+            in ("not_attempted", "in_progress", "success", "failed", "cancelled", "deferred")
             else "unknown"
         )
     return result
@@ -217,9 +221,11 @@ async def async_get_config_entry_diagnostics(
             "last_read_queue_ms": _number(coordinator.last_read_queue_ms),
             "last_control_queue_ms": _number(coordinator.last_control_queue_ms),
             "transport_timings": _transport_timings(coordinator.transport),
+            "connection_retained": getattr(coordinator.transport, "connection_retained", False)
+            is True,
         }
     return {
-        "diagnostics_schema": 3,
+        "diagnostics_schema": 4,
         "integration": DOMAIN,
         "options": {
             CONF_EFFECTS_ENABLED: bool(
@@ -227,6 +233,7 @@ async def async_get_config_entry_diagnostics(
             ),
             CONF_POLL_INTERVAL: int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
             CONF_MTU_WRITES: bool(entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
+            CONF_REUSE_CONNECTION: bool(entry.options.get(CONF_REUSE_CONNECTION, False)),
         },
         "bluetooth": _bluetooth_snapshot(hass, entry),
         "runtime": runtime,

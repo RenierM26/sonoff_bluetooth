@@ -56,9 +56,13 @@
   normal Git operations. Release only a green manifest-matching vX.Y.Z tag;
   verify release workflow, component ZIP and SHA256SUMS. See CONTRIBUTING.md.
 
-- Performance: update HA only after the matching successful ACK; early publication
-  may precede disconnect but both locks remain held through bounded cleanup.
-  No background cleanup tasks, permanent connection, blind retry or command replay.
-  MTU-aware writes default on after live L2 validation; preserve explicit false
-  and MTU/backend caps. Credential validation stays at 20 bytes. Timing diagnostics allowlist relative numbers/categories,
-  never payloads/identifiers; action completion still waits for cleanup.
+- Performance: update HA only after the matching successful ACK. Default sessions
+  retain both locks through bounded cleanup. Optional reuse may release the
+  operation lock after ACK while retaining the same live client; the entry-owned
+  idle task takes the transport lock before cleanup and is joined on unload/stop.
+  No unowned cleanup tasks, permanent sessions, blind retry or command replay.
+  Reuse defaults off until hardware-validated: 3-second idle / 15-second reuse age,
+  fresh clients after disconnect, and always-fresh state reads/credential checks.
+  MTU-aware writes default on after live L2 validation; preserve explicit false,
+  adapter caps and 20-byte credential checks. Timing diagnostics allowlist only
+  relative numbers, safe categories and booleans, never payloads/identifiers.

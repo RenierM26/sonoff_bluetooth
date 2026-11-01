@@ -22,6 +22,7 @@ from .const import (
     CONF_EFFECTS_ENABLED,
     CONF_MTU_WRITES,
     CONF_POLL_INTERVAL,
+    CONF_REUSE_CONNECTION,
     DEFAULT_EFFECTS_ENABLED,
     DEFAULT_MTU_WRITES,
     DEFAULT_POLL_INTERVAL,
@@ -303,6 +304,7 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                         ),
                         CONF_POLL_INTERVAL: int(interval),
                         CONF_MTU_WRITES: bool(user_input.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
+                        CONF_REUSE_CONNECTION: bool(user_input.get(CONF_REUSE_CONNECTION, False)),
                     },
                 )
         return self.async_show_form(
@@ -328,6 +330,10 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_MTU_WRITES,
                         default=self.config_entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES),
+                    ): bool,
+                    vol.Required(
+                        CONF_REUSE_CONNECTION,
+                        default=self.config_entry.options.get(CONF_REUSE_CONNECTION, False),
                     ): bool,
                 }
             ),

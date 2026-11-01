@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.0 — HACS validation and optional warm controls
+
+- Add dedicated HACS integration CI, now required on main alongside Python and
+  hassfest. Only external HA brands-index registration is exempt for this custom
+  repository; no default-catalog acceptance is claimed.
+- Optional connection reuse, off by default: a successful control can retain its
+  live authenticated session for three idle seconds, with a 15-second reuse age.
+  Successive controls can skip connect/notify/auth. No permanent connections or
+  new reuse after age expiry; in-flight work retains its bounded deadline.
+- Entry-owned idle tasks and serialized cleanup, joined on unload/shutdown;
+  cancellation races and disconnected/expired sessions release/discard ownership.
+- State reads, queries and credential validation always use fresh sessions. Error
+  paths never blindly replay commands; rapid ACK sequences are strictly unique.
+- Diagnostics schema4 adds reused/retained flags, deferred cleanup category and
+  latest lease cleanup timing without identifiers, payloads or task/client dumps.
+- Add synthetic lifecycle/recovery tests and an attended test plan. Warm-session
+  compatibility and additional hardware speedup are not yet validated. Existing
+  larger-packet/effect/poll settings and entity identities are preserved.
+
 ## 0.6.1 — Validated MTU-aware writes by default
 
 - Enable MTU-aware writes by default after the owner reported improved response
