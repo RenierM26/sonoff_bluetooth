@@ -31,7 +31,8 @@ still uses the local network.
 
 ## Requirements
 
-- Home Assistant **2026.2.3 or newer**; CI covers 2026.2.3 and 2026.10.4.
+- Home Assistant **2026.10.4**, the latest stable release checked on 2026-11-01.
+  We target the latest stable HA release only; older releases are not supported.
 - A SONOFF **L2 / UIID 137**, powered and advertising its Bluetooth control service.
 - A connectable Bluetooth adapter or **active ESPHome Bluetooth proxy** in range.
 - Credentials imported from running **SonoffLAN**, a valid **region-prefixed token**,
@@ -189,8 +190,8 @@ and polling are **not** implemented in the shipped light entity.
 ## Development
 
 ```sh
-uv venv --python 3.13
-uv pip install -r requirements-dev.txt 'homeassistant==2026.2.3'
+uv venv --python 3.14
+uv pip install -r requirements-dev.txt
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 .venv/bin/mypy
@@ -208,6 +209,7 @@ and Home Assistant hassfest validation. See [CONTRIBUTING.md](CONTRIBUTING.md).
 - [Protocol reconstruction](docs/PROTOCOL.md)
 - [Artifact provenance](docs/PROVENANCE.json)
 - [Hardware validation and remaining checks](docs/HARDWARE-TEST.md)
+- [Feature comparison and priorities](docs/FEATURES.md)
 - [Changelog](CHANGELOG.md)
 - [Report an issue](https://github.com/RenierM26/sonoff_bluetooth/issues)
 - [Security policy](SECURITY.md)

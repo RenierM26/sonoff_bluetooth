@@ -42,7 +42,7 @@ def decrypt(payload: bytes, device_apikey: str) -> str:
         padded = cipher.update(ciphertext) + cipher.finalize()
         unpadder = padding.PKCS7(128).unpadder()
         return (unpadder.update(padded) + unpadder.finalize()).decode()
-    except (ValueError, UnicodeError):
+    except ValueError, UnicodeError:
         raise ProtocolError("Cannot decrypt BLE response; check the device apikey") from None
 
 

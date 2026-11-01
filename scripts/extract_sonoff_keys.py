@@ -18,7 +18,7 @@ def extract(config_dir: Path, device_id: str, output: Path) -> None:
     for path in sorted((config_dir / ".storage" / "sonoff").glob("*.json")):
         try:
             content = json.loads(path.read_text())
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         devices = content.get("data", []) if isinstance(content, dict) else []
         if isinstance(devices, list):
@@ -54,7 +54,7 @@ def main() -> None:
     args = parser.parse_args()
     try:
         extract(args.config_dir, args.device_id, args.output)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         parser.exit(
             1,
             "Export failed. Check the config path, device ID and cache; output must not already exist.\n",

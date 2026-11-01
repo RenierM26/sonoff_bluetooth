@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
-from importlib import import_module
 from typing import Any
 
+import probatio as vol
 from bleak.exc import BleakError
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
@@ -23,13 +23,8 @@ from .discovery import (
 )
 from .protocol import ProtocolError
 
-# Select the schema library declared by this HA version, not whichever optional
-# library happens to be installed. No process-wide compatibility shims.
-_schema_hint = str(config_entries.ConfigFlow.async_show_form.__annotations__.get("data_schema", ""))
-vol = import_module("probatio" if "probatio" in _schema_hint else "voluptuous")
 
-
-def _schema(existing: dict[str, Any] | None = None) -> Any:
+def _schema(existing: dict[str, Any] | None = None) -> vol.Schema:
     """Never put saved credentials back into a frontend form."""
     existing = existing or {}
     password = selector.TextSelector(
@@ -225,7 +220,7 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_abort(reason="already_configured")
                 try:
                     await make_transport(self.hass, data).authenticate()
-                except (BleakError, TimeoutError, OSError):
+                except BleakError, TimeoutError, OSError:
                     errors["base"] = "cannot_connect"
                 except ProtocolError:
                     errors["base"] = "auth_failed"

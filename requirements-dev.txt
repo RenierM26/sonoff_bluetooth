@@ -1,13 +1,10 @@
-homeassistant>=2026.2.3
+homeassistant==2026.10.4
 mypy==2.4.1
 pytest==9.2.0
 pytest-asyncio==1.4.1
 pytest-cov==7.1.0
 ruff==0.17.3
-# Optional HA Bluetooth/USB/Supervisor imports needed by isolated unit tests.
-aiousbwatcher==1.1.1; python_version < '3.14'
-aiousbwatcher==1.1.2; python_version >= '3.14'
-pyserial==3.5; python_version < '3.14'
-serialx==1.11.0; python_version >= '3.14'
-aiohasupervisor==0.3.3; python_version < '3.14'
-aiohasupervisor==0.6.0; python_version >= '3.14'
+# Optional HA integration imports, matching HA 2026.10.4 manifests.
+aiousbwatcher==1.1.2
+serialx==1.11.0
+aiohasupervisor==0.6.0

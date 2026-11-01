@@ -52,7 +52,7 @@ class L2Light(LightEntity):
     async def _send(self, params: dict[str, Any]) -> None:
         try:
             await self._transport.send_update(params)
-        except (ProtocolError, BleakError, TimeoutError, OSError):
+        except ProtocolError, BleakError, TimeoutError, OSError:
             raise HomeAssistantError(
                 "L2 Bluetooth command failed; check proximity and credentials"
             ) from None

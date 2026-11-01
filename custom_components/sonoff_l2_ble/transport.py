@@ -136,7 +136,7 @@ class L2Transport:
                         return body
                     try:
                         message = json.loads(decrypt(body, self.device_apikey))
-                    except (ValueError, TypeError):
+                    except ValueError, TypeError:
                         raise ProtocolError("Invalid BLE response JSON") from None
                     if not isinstance(message, dict):
                         raise ProtocolError("BLE response is not an object")

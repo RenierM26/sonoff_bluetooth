@@ -1,11 +1,12 @@
 # Contributing
 
-Use Python 3.13 with HA 2026.2.3 or Python 3.14 with HA 2026.10.4. Follow the README
+Use Python 3.14 with HA 2026.10.4 (latest stable checked 2026-11-01). Only the
+latest stable HA release is supported; do not add older-version shims. Follow the README
 for the uv environment and local check commands. Optional pre-commit hooks run
 Ruff and JSON/YAML/whitespace checks; install pre-commit separately if desired.
 
 Before a PR, run Ruff lint and format checks, strict mypy, and pytest with coverage.
-CI repeats those checks on both HA versions and validates metadata using hassfest.
+CI repeats those checks on the current supported HA and validates metadata using hassfest.
 Tests must use synthetic credentials, and must not scan/connect to actual hardware.
 
 Preserve authenticated framing, bounded waits, serialized per-device commands,
@@ -23,12 +24,12 @@ source, authentication tokens, keys, private device addresses or household backu
 
 ## Dependency updates
 
-Dependabot tracks tool and action releases. The `homeassistant` requirement states
-our supported floor; current HA is already tested explicitly in the CI matrix.
-Optional USB/Supervisor packages in requirements-dev.txt mirror the matching HA
-integration manifests. Do not independently bump those pins: update them when the
-HA matrix moves, and verify both environments. Mypy and other development tools
-can be updated after both matrix checks pass.
+Dependabot tracks tool and action releases. HA is pinned to the latest stable
+release verified by this project. When a new stable HA is available, update its
+pin, HACS minimum, README, and optional USB/Supervisor dependency pins together.
+Those optional dependencies mirror the corresponding HA integration manifests,
+not necessarily each package's newest release. Keep native frontend serialization
+tests for every setup path and reconfiguration. No older-version matrix is needed.
 
 ## Releases
 

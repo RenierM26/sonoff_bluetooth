@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 — Latest Home Assistant only
+
+- Target HA 2026.10.4 (latest stable checked 2026-11-01) and Python 3.14 only.
+- Remove old-HA schema detection, old optional dependency branches and the
+  two-version CI matrix; use native probatio forms directly.
+- Align HACS minimum, development pins and documentation with the current release.
+- Document app feature gaps, evidence limits and recommended implementation order.
+
 ## 0.3.0 — Assisted setup
 
 - Setup menu: import from an already-loaded SonoffLAN registry, import with a

@@ -12,26 +12,18 @@ concurrency:
   cancel-in-progress: true
 jobs:
   checks:
-    name: Python ${{ matrix.python }} / HA ${{ matrix.ha }}
+    name: Python 3.14 / latest supported HA
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - python: '3.13'
-            ha: '2026.2.3'
-          - python: '3.14'
-            ha: '2026.10.4'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.14'
       - name: Install test environment
         run: |
-          uv venv --python '${{ matrix.python }}'
-          uv pip install -r requirements-dev.txt 'homeassistant==${{ matrix.ha }}'
+          uv venv --python 3.14
+          uv pip install -r requirements-dev.txt
       - name: Ruff lint
         run: .venv/bin/ruff check .
       - name: Ruff formatting
@@ -42,7 +34,7 @@ jobs:
         run: .venv/bin/pytest --cov --cov-report=term-missing --cov-report=xml
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-python-${{ matrix.python }}
+          name: coverage-python-3.14
           path: coverage.xml
   hassfest:
     name: Home Assistant manifest validation

@@ -139,7 +139,7 @@ async def token_candidates(hass: HomeAssistant, supplied_token: str) -> list[Can
                 if response.status != 200:
                     raise ImportFailed
                 body = await response.json()
-        except (ClientError, TimeoutError, ValueError):
+        except ClientError, TimeoutError, ValueError:
             raise ImportFailed from None
         if not isinstance(body, dict):
             raise ImportFailed
