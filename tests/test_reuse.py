@@ -395,3 +395,44 @@ async def test_failed_idle_cleanup_is_reported_and_never_used_for_reuse(warm, mo
     assert not transport.connection_retained
     await transport.send_update({"switch": "off"})
     assert transport.factory.await_count == 2
+
+
+async def test_cancelled_forced_read_cleanup_finishes_without_orphaning_a_lease(warm):
+    transport, peers = warm
+    await transport.send_update({"switch": "on"})
+    original = peers[0].disconnect
+    entered = asyncio.Event()
+    attempts = 0
+
+    async def first_blocks():
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            entered.set()
+            await asyncio.Event().wait()
+        await original()
+
+    peers[0].disconnect = first_blocks
+    read = asyncio.create_task(transport.read_state())
+    await entered.wait()
+    read.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await asyncio.wait_for(read, 1)
+    assert attempts == 2 and peers[0].disconnected and not transport.connection_retained
+    assert not transport.lock.locked()
+    assert await transport.read_state() == {"switch": "off", "mode": 0}
+
+
+async def test_unreadable_backend_status_never_orphans_or_authorizes_a_warm_session(warm):
+    transport, peers = warm
+    await transport.send_update({"switch": "on"})
+
+    def unreadable(peer):
+        raise OSError("private backend error")
+
+    with patch.object(
+        WarmPeer, "is_connected", property(unreadable, lambda peer, value: None), create=True
+    ):
+        await transport.send_update({"switch": "off"})
+    assert transport.factory.await_count == 2 and all(peer.disconnected for peer in peers)
+    assert not transport.connection_retained

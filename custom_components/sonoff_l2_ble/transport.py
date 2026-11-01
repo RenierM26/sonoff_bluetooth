@@ -84,6 +84,14 @@ def write_chunk_size(client: GattClient, characteristic: GattCharacteristic, ena
     return size
 
 
+def is_connected(client: GattClient) -> bool:
+    """Unknown or failing cached backend status cannot authorize reuse."""
+    try:
+        return getattr(client, "is_connected", False) is True
+    except Exception:
+        return False
+
+
 class GattCharacteristic(Protocol):
     """The characteristic surface consumed by this transport."""
 
@@ -189,6 +197,7 @@ class L2Transport:
         connection = self._connection
         if connection is None:
             return
+        self._reuse_deadline = 0  # A closing/cancelled session must never be reused.
         timing = self.timings["lease_cleanup"] = SessionTiming()
         try:
             with measure(timing, "total_ms"):
@@ -303,7 +312,7 @@ class L2Transport:
                     if connection is not None and (
                         not can_reuse
                         or asyncio.get_running_loop().time() >= self._reuse_deadline
-                        or getattr(connection.client, "is_connected", False) is not True
+                        or not is_connected(connection.client)
                     ):
                         await self._close_retained()
                         connection = None
@@ -335,7 +344,7 @@ class L2Transport:
                             if (
                                 can_reuse
                                 and not self._closed
-                                and getattr(client, "is_connected", False) is True
+                                and is_connected(client)
                                 and (
                                     not timing.reused_connection
                                     or asyncio.get_running_loop().time() < self._reuse_deadline
@@ -351,8 +360,13 @@ class L2Transport:
                         if not retained:
                             await self._disconnect(client, timing)
                 finally:
-                    self._active_task = None
-                    self.lock.release()
+                    try:
+                        if not retained and self._connection is not None:
+                            # Cancellation during forced fresh-read cleanup still owns a handle.
+                            await self._close_retained()
+                    finally:
+                        self._active_task = None
+                        self.lock.release()
         except asyncio.CancelledError:
             timing.outcome = "cancelled"
             raise
