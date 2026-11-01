@@ -218,3 +218,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local credentials, research artifacts and device-specific exports
+.venv*/
+private/
+secrets/
+.storage/
+*.credentials.json
+*.apk
+*.xapk
+*.dex
+*.bundle
+*.hasm
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/

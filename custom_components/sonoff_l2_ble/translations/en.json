@@ -1,0 +1,40 @@
+{
+  "title": "SONOFF Bluetooth",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect a SONOFF L2 over Bluetooth",
+        "description": "Requires an L2 (UIID 137), a connectable Bluetooth adapter/proxy, and existing eWeLink credentials. Leave account apikey blank to use the device apikey for an owned device. Shared devices may need a different account apikey. Setup authenticates only; it does not change the light.",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth MAC address",
+          "device_id": "eWeLink device ID",
+          "device_apikey": "Device apikey (not LAN devicekey)",
+          "account_apikey": "Account apikey (optional for owner devices)"
+        }
+      },
+      "reconfigure": {
+        "title": "Update your L2 connection",
+        "description": "Update the address, name or credentials. Leave credential fields blank to keep their saved values. Validation authenticates without changing the light.",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth MAC address",
+          "device_id": "eWeLink device ID",
+          "device_apikey": "Device apikey (not LAN devicekey)",
+          "account_apikey": "Account apikey (optional for owner devices)"
+        }
+      }
+    },
+    "error": {
+      "invalid_address": "Use a Bluetooth MAC address such as AA:BB:CC:DD:EE:FF.",
+      "invalid_device_id": "Use the 10-character hexadecimal eWeLink device ID.",
+      "missing_fields": "Complete all required fields.",
+      "cannot_connect": "Cannot connect. Close eWeLink, check proximity, and ensure your ESPHome Bluetooth proxy is active.",
+      "auth_failed": "Authentication or device identity check failed. Check the device apikey (not devicekey), device ID and firmware."
+    },
+    "abort": {
+      "already_configured": "This Bluetooth address is already configured.",
+      "reconfigure_successful": "Connection settings updated."
+    }
+  }
+}

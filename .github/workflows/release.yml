@@ -1,0 +1,33 @@
+name: Package release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+  package:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Check tag and package component
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, zipfile
+          component = pathlib.Path('custom_components/sonoff_l2_ble')
+          version = json.loads((component / 'manifest.json').read_text())['version']
+          assert os.environ['RELEASE_TAG'] == f'v{version}', 'Tag must match manifest version'
+          with zipfile.ZipFile('sonoff_l2_ble.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+              for path in sorted(component.rglob('*')):
+                  if path.is_file() and '__pycache__' not in path.parts:
+                      archive.write(path, path.relative_to(component))
+          PY
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" sonoff_l2_ble.zip --verify-tag --generate-notes

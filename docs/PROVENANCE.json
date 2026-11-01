@@ -1,0 +1,19 @@
+{
+  "checked_on": "2026-11-01",
+  "package": "com.coolkit",
+  "official_download": "https://app.coolkit.cn/coolkit.apk",
+  "official_version": "5.28.1",
+  "latest_located_download": "https://d.apkpure.net/b/APK/com.coolkit?version=latest",
+  "latest_located_version": "5.29.1",
+  "version_code": 2026091016,
+  "signer_sha256": "3a07f60d4cb6ff54f2a2377a014db7b14b966057ce6e98cee007d29ad6684b62",
+  "signer_matches_official": true,
+  "jadx": "1.5.3",
+  "hermes_dec_commit": "2e796663e1fedb93dca51060797ebf3327b3fedb",
+  "hashes": {
+    "artifacts/coolkit.apk": "c471779c80148fab3d3664f9ac00d5e455fbaea23584c0042fb4c1a8782d385e",
+    "artifacts/ewelink-latest.xapk": "2d53130178a3a8173511c0457ddff03a7f7370c9a7ac2d19b17b9c5ed4dc5978",
+    "artifacts/latest/com.coolkit.apk": "5de530887e92da934914b78eba331bea9e1a441ed44e147075d532e758f39b96",
+    "extracted/latest/assets/index.android.bundle": "7ab4c5dd7ce13827e6341880659b8301fb3c25609f13a29d38070871eb530eee"
+  }
+}

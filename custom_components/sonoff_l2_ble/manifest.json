@@ -1,0 +1,17 @@
+{
+  "domain": "sonoff_l2_ble",
+  "name": "SONOFF Bluetooth",
+  "codeowners": [
+    "@RenierM26"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
+  "documentation": "https://github.com/RenierM26/sonoff_bluetooth",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "issue_tracker": "https://github.com/RenierM26/sonoff_bluetooth/issues",
+  "requirements": [],
+  "version": "0.2.0"
+}

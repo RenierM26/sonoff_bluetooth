@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible L2 Bluetooth integration problem.
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Home Assistant and integration versions
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Exact strip/controller model and firmware
+    validations:
+      required: true
+  - type: input
+    id: adapter
+    attributes:
+      label: Adapter/proxy model and ESPHome version
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected result and actual result
+      description: Distinguish visible light output from HA assumed state.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant redacted logs
+      description: Never include keys, tokens, full config entries, private MAC addresses or cache exports.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed credentials and private device identifiers.
+          required: true

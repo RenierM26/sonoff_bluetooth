@@ -1,0 +1,23 @@
+# Standalone ESP32 example. For an existing switch, merge ONLY the two BLE
+# sections below into its known-working configuration. Do not replace its pins,
+# board, framework, relay logic or power settings with this example.
+esphome:
+  name: sonoff-l2-proxy
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+logger:
+api:
+  encryption:
+    key: !secret api_encryption_key
+ota:
+  - platform: esphome
+    password: !secret ota_password
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+esp32_ble_tracker:
+bluetooth_proxy:
+  active: true
