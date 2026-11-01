@@ -195,6 +195,14 @@ created. Local control needs only HA, its Bluetooth adapter/proxy and the L2—n
 SonoffLAN, an eWeLink app, a cloud session, token refresh, or Internet access after
 credentials are imported. Internet-blocked operation still awaits a physical test.
 
+### Command responsiveness
+
+HA updates the acknowledged, assumed target state before waiting for disconnect
+cleanup. Native diagnostics include per-stage session timings and write counts.
+For measuring latency and testing the optional **larger Bluetooth packets** setting,
+see [performance tuning](docs/PERFORMANCE.md). Larger packets remain **off by default**
+until hardware-tested; existing keys, entity IDs, effects and polling settings stay unchanged.
+
 ### Credential recovery and diagnostics
 
 An **explicit Bluetooth authentication rejection** opens HA's native

@@ -70,3 +70,12 @@ The implementation still does not capture/stream audio, use a vendor app at
 runtime, or claim HA media-player beat synchronisation. Other models/firmware,
 long-run/power-cycle/recovery scenarios and blocked-Internet operation remain
 outside this trial's evidence. No hardware was actuated to make the v0.5.0 change.
+
+
+## v0.6.0 performance evidence boundary
+
+The original 20-byte wire policy is unchanged by default. Matching-ACK publication
+before disconnect and session timings are regression-tested with synthetic peers.
+Larger MTU-aware writes remain off by default and are not hardware-validated; no
+physical latency improvement is claimed. See PERFORMANCE.md for comparison and
+rollback. The owner reports above do not automatically cover this new packet mode.

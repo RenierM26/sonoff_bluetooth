@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.0 — Latency diagnostics and faster HA feedback
+
+- Publish matching-ACK target state to HA before disconnect cleanup, without
+  optimistic pre-ACK state, duplicate updates, overlapping sessions or background
+  cleanup tasks. Actions/next operations still wait for bounded cleanup.
+- Add read-only session timings (queue/connect/notify/auth/control/report/ACK/
+  disconnect/total), write/byte counts and separate cleanup outcome to native
+  diagnostics schema 3. No payloads, identifiers or wall-clock times.
+- Optional MTU-aware writes, off by default, capped by MTU-3 / 244 bytes and the
+  backend write-without-response limit. Unknown limits fall back to 20 bytes;
+  failed writes/ACKs never trigger blind resend. Hardware compatibility/speedup
+  remain unverified; the default wire behaviour is unchanged.
+- Preserve effects/polling preferences and entity IDs; add native options-form,
+  ACK/cleanup/cancellation, packet-limit and privacy regression coverage.
+- Document baseline measurement, opt-in comparison and rollback steps. No live
+  HA configuration or hardware was changed to implement this release.
+
 ## 0.5.0 — Standard effects and 60-second polling
 
 - Repository maintenance: contributor/security/issue templates, HACS release ZIP

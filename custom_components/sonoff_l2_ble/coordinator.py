@@ -6,6 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from datetime import timedelta
+from time import perf_counter
 from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
@@ -81,6 +82,10 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_control_outcome: ControlOutcome = "not_attempted"
         self.data = {}
         self.operation_lock = asyncio.Lock()
+        self.last_read_queue_ms: float | None = None
+        self.last_control_queue_ms: float | None = None
+        self._control_ack_received = False
+        self.transport.on_update_ack = self._async_control_acknowledged
 
     @callback
     def async_track_presence(self) -> None:
@@ -116,7 +121,9 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     async def _async_update_data(self) -> dict[str, Any]:
+        started = perf_counter()
         async with self.operation_lock:
+            self.last_read_queue_ms = round((perf_counter() - started) * 1000, 3)
             self.last_read_outcome = "in_progress"
             try:
                 data = await self.transport.read_state()
@@ -150,10 +157,25 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.last_read_outcome = "reported"
             return data
 
+    @callback
+    def _async_control_acknowledged(self, params: dict[str, Any]) -> None:
+        """Publish validated ACK before disconnect, retaining serialization until cleanup."""
+        if self._control_ack_received:
+            return
+        self._control_ack_received = True
+        self.reachable = True
+        self.auth_failed = False
+        self.reported = False
+        self.last_control_outcome = "acknowledged"
+        self.async_set_updated_data({**self.data, **params})
+
     async def async_control(
         self, request: dict[str, Any] | Callable[[dict[str, Any]], dict[str, Any]]
     ) -> None:
+        started = perf_counter()
         async with self.operation_lock:
+            self.last_control_queue_ms = round((perf_counter() - started) * 1000, 3)
+            self._control_ack_received = False
             try:
                 # Build mode-dependent commands only after preceding reads/writes.
                 params = request(self.data) if callable(request) else request
@@ -179,7 +201,8 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
                     translation_key="auth_failed",
                 ) from None
             except asyncio.CancelledError:
-                self.last_control_outcome = "cancelled"
+                if not self._control_ack_received:
+                    self.last_control_outcome = "cancelled"
                 self.reported = False
                 self.async_update_listeners()
                 raise
@@ -197,8 +220,5 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
                     translation_domain=DOMAIN,
                     translation_key="command_failed",
                 ) from None
-            self.reachable = True
-            self.auth_failed = False
-            self.reported = False
-            self.last_control_outcome = "acknowledged"
-            self.async_set_updated_data({**self.data, **params})
+            # Injectable transports may not provide an early callback. Never publish twice.
+            self._async_control_acknowledged(params)

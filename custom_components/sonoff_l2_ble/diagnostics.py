@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from homeassistant.components import bluetooth
@@ -12,6 +13,7 @@ from . import L2ConfigEntry
 from .const import (
     CONF_DEVICE_ID,
     CONF_EFFECTS_ENABLED,
+    CONF_MTU_WRITES,
     CONF_POLL_INTERVAL,
     DEFAULT_EFFECTS_ENABLED,
     DEFAULT_POLL_INTERVAL,
@@ -19,6 +21,7 @@ from .const import (
 )
 from .protocol import SERVICE
 from .state import EFFECTS, integer
+from .transport import SessionTiming
 
 READ_OUTCOMES = frozenset(
     {
@@ -60,6 +63,54 @@ ERROR_TYPES = frozenset(
         "RuntimeError",
     }
 )
+
+
+TIMING_FIELDS = (
+    "queue_ms",
+    "connect_ms",
+    "notify_ms",
+    "authentication_ms",
+    "command_ms",
+    "report_ms",
+    "ack_ms",
+    "disconnect_ms",
+    "total_ms",
+    "write_calls",
+    "bytes_written",
+    "chunk_size",
+)
+
+
+def _number(value: Any) -> int | float | None:
+    return (
+        value
+        if type(value) in (int, float) and 0 <= value <= 1e12 and math.isfinite(value)
+        else None
+    )
+
+
+def _transport_timings(transport: Any) -> dict[str, Any]:
+    records = getattr(transport, "timings", None)
+    if not isinstance(records, dict):
+        return {}
+    result: dict[str, dict[str, Any]] = {}
+    for operation in ("auth", "read", "update", "query"):
+        record = records.get(operation)
+        if not isinstance(record, SessionTiming):
+            continue
+        result[operation] = {field: _number(getattr(record, field)) for field in TIMING_FIELDS}
+        result[operation]["outcome"] = (
+            record.outcome
+            if record.outcome in ("in_progress", "success", "auth_failed", "failed", "cancelled")
+            else "unknown"
+        )
+        result[operation]["disconnect_outcome"] = (
+            record.disconnect_outcome
+            if record.disconnect_outcome
+            in ("not_attempted", "in_progress", "success", "failed", "cancelled")
+            else "unknown"
+        )
+    return result
 
 
 def _rssi(value: Any) -> int | None:
@@ -162,15 +213,19 @@ async def async_get_config_entry_diagnostics(
             else "OtherError",
             "operation_in_progress": coordinator.operation_lock.locked(),
             "polling_enabled": coordinator.update_interval is not None,
+            "last_read_queue_ms": _number(coordinator.last_read_queue_ms),
+            "last_control_queue_ms": _number(coordinator.last_control_queue_ms),
+            "transport_timings": _transport_timings(coordinator.transport),
         }
     return {
-        "diagnostics_schema": 2,
+        "diagnostics_schema": 3,
         "integration": DOMAIN,
         "options": {
             CONF_EFFECTS_ENABLED: bool(
                 entry.options.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
             ),
             CONF_POLL_INTERVAL: int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
+            CONF_MTU_WRITES: bool(entry.options.get(CONF_MTU_WRITES, False)),
         },
         "bluetooth": _bluetooth_snapshot(hass, entry),
         "runtime": runtime,

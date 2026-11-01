@@ -89,3 +89,17 @@ certification or proof of a live installation / physical effect behaviour.
 - [Naming entities](https://contributors.home-assistant.io/core/entities/naming/)
 - [Diagnostics](https://contributors.home-assistant.io/core/integrations/diagnostics/)
 - [Manifest / IoT class](https://contributors.home-assistant.io/core/integrations/manifest/)
+
+
+## v0.6.0 performance follow-up
+
+Rechecked the current canonical guidance links above against supported HA 2026.10.4.
+The early matching-ACK callback uses native `async_set_updated_data`; it does not
+claim device readback. Both coordinator/transport locks remain held through
+bounded cleanup. No new scanner, reused Bleak client, background cleanup task or
+blind retry was introduced. The optional MTU-aware write policy defaults off and
+retains characteristic write-response semantics and no-response pacing. Safe
+relative timing fields extend the existing native diagnostics allowlist. Native
+options serialization, cancellation, negative/stale ACK, partial write, cleanup
+and privacy regressions are covered in tests/test_performance.py. Hardware speed
+and larger-packet compatibility remain unverified; see PERFORMANCE.md.
