@@ -26,8 +26,8 @@ Optional pre-commit hooks run Ruff and JSON/YAML/whitespace checks; install
 pre-commit separately if desired. Preserve Apache-2.0 licensing. Tests must never
 scan/connect to real hardware automatically.
 
-Use a feature branch and pull request. Both Python CI and Home Assistant manifest
-validation must pass against current main, and review threads must be resolved.
+Use a feature branch and pull request. Python CI, Home Assistant manifest validation and HACS validation
+must pass against current main, and review threads must be resolved.
 Squash merging keeps main linear; merged branches are deleted automatically.
 Reviewer approvals are optional for this single-maintainer project, not a way to
 skip CI. Do not push directly to main or rewrite published version tags.
@@ -67,3 +67,10 @@ Use [private vulnerability reporting](SECURITY.md) for security problems.
 Published version tags are protected against rewriting/deletion. Fix mistakes
 with a new version rather than moving tags. HACS uses the release ZIP; its files
 are at the archive root for extraction into `custom_components/sonoff_l2_ble/`.
+
+
+HACS CI validates integration repository metadata with `hacs/action`. Only the
+external `brands` index check is exempt: this custom repository is not registered
+under its domain in home-assistant/brands. This is not a claim of acceptance into
+the default HACS catalog. PR comments are disabled; the action uses read-only
+permissions. Release packaging also runs this check via the reusable CI workflow.

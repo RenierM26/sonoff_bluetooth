@@ -49,7 +49,7 @@
   outcomes separate from coordinator update success (an ACK is not a state read).
 
 
-- Repository governance: main requires a PR, both GitHub Actions status checks,
+- Repository governance: main requires a PR, all three GitHub Actions status checks,
   an up-to-date branch, resolved threads and linear history. Use a feature branch
   and squash merge; no direct main pushes or protection bypass. Approvals are
   optional for the single-maintainer workflow. Version tags are immutable through
