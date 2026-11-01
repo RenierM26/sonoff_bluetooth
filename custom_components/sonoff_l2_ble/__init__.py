@@ -60,6 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
     from .coordinator import L2Coordinator
 
     entry.runtime_data = L2Coordinator(hass, entry, make_transport(hass, entry.data))
+    entry.runtime_data.async_track_presence()
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     # Best effort: an offline strip must not prevent adding its retry button/light.
     await entry.runtime_data.async_refresh()

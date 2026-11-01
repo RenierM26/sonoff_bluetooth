@@ -3,13 +3,15 @@
 from typing import Any
 
 from homeassistant.components.light import LightEntity
-from homeassistant.components.light.const import ColorMode, LightEntityFeature
+from homeassistant.components.light.const import EFFECT_OFF, ColorMode, LightEntityFeature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import L2ConfigEntry
 from .entity import L2Entity
-from .state import EFFECTS, RHYTHMS, STATIC_EFFECT, brightness, effect_name, turn_on_params
+from .state import EFFECTS, RHYTHMS, brightness, effect_name, turn_on_params
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -20,14 +22,23 @@ async def async_setup_entry(
 
 class L2Light(L2Entity, LightEntity):
     _attr_name = None
-    _attr_color_mode = ColorMode.RGB
 
     def __init__(self, entry: L2ConfigEntry) -> None:
         super().__init__(entry)
         self._attr_supported_color_modes = {ColorMode.RGB}
         if self.coordinator.experimental:
             self._attr_supported_features = LightEntityFeature.EFFECT
-            self._attr_effect_list = [STATIC_EFFECT, *EFFECTS, *RHYTHMS]
+            self._attr_effect_list = [EFFECT_OFF, *EFFECTS, *RHYTHMS]
+
+    @property
+    def color_mode(self) -> ColorMode:
+        mode = self.coordinator.data.get("mode")
+        if self.coordinator.experimental:
+            if mode in EFFECTS.values():
+                return ColorMode.BRIGHTNESS
+            if mode == 4 and self.effect:
+                return ColorMode.ONOFF
+        return ColorMode.RGB if mode in (0, 1) else ColorMode.UNKNOWN
 
     @property
     def is_on(self) -> bool | None:

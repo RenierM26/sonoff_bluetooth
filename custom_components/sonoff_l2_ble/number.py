@@ -4,12 +4,15 @@ from typing import Any
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import L2ConfigEntry
+from .const import DOMAIN
 from .entity import L2Entity
 from .state import EFFECTS
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -30,15 +33,15 @@ class L2Parameter(L2Entity, NumberEntity):
         super().__init__(entry, key)
         self.key = key
         self._attr_native_min_value = 1 if key == "speed" else 0
-        self._attr_name = (
-            "Effect speed (experimental)" if key == "speed" else "Rhythm sensitivity (experimental)"
-        )
+        self._attr_translation_key = "effect_speed" if key == "speed" else "rhythm_sensitivity"
 
     @property
     def available(self) -> bool:
         mode = self.coordinator.data.get("mode")
-        return self.coordinator.experimental and (
-            mode in EFFECTS.values() if self.key == "speed" else mode == 4
+        return (
+            super().available
+            and self.coordinator.experimental
+            and (mode in EFFECTS.values() if self.key == "speed" else mode == 4)
         )
 
     @property
@@ -60,8 +63,10 @@ class L2Parameter(L2Entity, NumberEntity):
             or not self.native_min_value <= value <= 100
             or not float(value).is_integer()
         ):
-            raise HomeAssistantError(
-                "Select a compatible experimental effect first; value must be within the integer slider range"
+            raise ServiceValidationError(
+                "Select a compatible experimental effect first; value must be within the integer slider range",
+                translation_domain=DOMAIN,
+                translation_key="invalid_number",
             )
         await self.coordinator.async_control(lambda data: self._params(data, int(value)))
 

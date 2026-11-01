@@ -26,6 +26,10 @@ class ProtocolError(Exception):
     """Invalid frame, credentials, or device response; never contains secrets."""
 
 
+class AuthenticationError(ProtocolError):
+    """The device explicitly rejected authentication (not a timeout/bad packet)."""
+
+
 def encrypt(text: str, device_apikey: str) -> bytes:
     key = hashlib.md5(device_apikey.encode(), usedforsecurity=False).digest()
     padder = padding.PKCS7(128).padder()

@@ -30,3 +30,12 @@
   inside the coordinator operation lock. New effects/rhythm stay opt-in until
   hardware-validated; do not imply standalone audio response from discrete config
   commands alone. Number adjustments must not explicitly turn the strip on.
+
+- Reconfiguration/reauth must keep the same MAC/device ID; replacing hardware needs
+  a new entry rather than rebinding old registry identities. Use data_updates.
+- Availability uses HA connectable presence + communication/auth status; the native
+  recovery button stays available. Rediscovery/missing reports clear stale fields.
+- Effects report native BRIGHTNESS/ONOFF colour modes; static uses EFFECT_OFF.
+  Keep legacy Solid input as an alias and allow effect-off + RGB scene restoration.
+- Only explicit AuthenticationError opens reauth; no prompts for timeouts/bad frames.
+  Diagnostics must remain an allowlist without entry data or error-message dumps.

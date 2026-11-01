@@ -5,7 +5,7 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import pytest
-from homeassistant.components.light.const import LightEntityFeature
+from homeassistant.components.light.const import EFFECT_OFF, LightEntityFeature
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -126,7 +126,7 @@ def test_exact_l2_preset_mapping_and_no_unbound_modes():
     }
     assert effect_name({"mode": 7}) == "Reading"
     assert effect_name({"mode": 4, "rhythmMode": 2}) == "Rhythm dynamic"
-    assert effect_name({"mode": 1}) == "Solid"
+    assert effect_name({"mode": 1}) == EFFECT_OFF
     assert effect_name({"mode": 99}) is None
     assert brightness({"mode": 4, "bright": 80}) is None
 
@@ -156,7 +156,7 @@ async def test_native_effect_and_brightness_preserve_mode_with_acked_state():
     transport.send_update.assert_awaited_with({"switch": "on", "mode": 7, "bright07": 40})
     assert coordinator.data["speed07"] == 50
     await light.async_turn_on(rgb_color=(3, 4, 5))
-    assert light.effect == "Solid" and light.rgb_color == (3, 4, 5)
+    assert light.effect == EFFECT_OFF and light.rgb_color == (3, 4, 5)
     transport.send_update.assert_awaited_with(
         {"switch": "on", "mode": 0, "colorR": 3, "colorG": 4, "colorB": 5}
     )
@@ -186,7 +186,7 @@ async def test_native_rhythm_only_configures_controller_no_audio_stream_or_cloud
     with pytest.raises(HomeAssistantError):
         await light.async_turn_on(brightness=128)
     await light.async_turn_on(effect="Solid")
-    assert light.effect == "Solid" and not sensitivity.available
+    assert light.effect == EFFECT_OFF and not sensitivity.available
 
 
 async def test_speed_tuning_preserves_power_and_effect_brightness():

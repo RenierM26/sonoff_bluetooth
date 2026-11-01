@@ -4,7 +4,7 @@
     "step": {
       "reconfigure": {
         "title": "Update your L2 connection",
-        "description": "Update the address, name or credentials. Leave credential fields blank to keep their saved values. Validation authenticates without changing the light.",
+        "description": "Update the name or credentials for this same strip. Its Bluetooth address and device ID cannot be rebound to another device. Leave credential fields blank to keep saved values. Validation does not change the light.",
         "data": {
           "name": "Name",
           "address": "Bluetooth MAC address",
@@ -61,6 +61,17 @@
           "name": "Name",
           "address": "Bluetooth MAC address"
         }
+      },
+      "reauth_confirm": {
+        "title": "Update L2 credentials",
+        "description": "The strip explicitly rejected Bluetooth authentication. Enter the new device/account apikeys for this same strip. Blank key fields keep saved values; keys are never returned in this form. Validation only authenticates.",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth MAC address",
+          "device_id": "eWeLink device ID",
+          "device_apikey": "Device apikey (not LAN devicekey)",
+          "account_apikey": "Account apikey (optional for owner devices)"
+        }
       }
     },
     "error": {
@@ -71,11 +82,11 @@
       "auth_failed": "Authentication or device identity check failed. Check the device apikey (not devicekey), device ID and firmware.",
       "invalid_token": "Token is invalid, rejected or expired. Use the complete region:token value from SonoffLAN.",
       "cloud_failed": "Could not read eWeLink account/device data. Check connectivity and retry.",
-      "invalid_device": "Choose a device from the list."
+      "invalid_device": "Choose a device from the list.",
+      "identity_mismatch": "Keep this strip\u2019s original Bluetooth address and device ID. Add a different strip as a new integration."
     },
     "abort": {
       "already_configured": "This Bluetooth address is already configured.",
-      "reconfigure_successful": "Connection settings updated.",
       "no_devices": "No supported L2 devices with keys were found. Ensure SonoffLAN is loaded with its devices, try token import, or use manual setup."
     }
   },
@@ -92,6 +103,38 @@
     },
     "error": {
       "invalid_interval": "Use 0 to disable polling, or an integer from 30 to 3600 seconds."
+    }
+  },
+  "entity": {
+    "button": {
+      "refresh_state": {
+        "name": "Refresh state"
+      }
+    },
+    "number": {
+      "effect_speed": {
+        "name": "Effect speed (experimental)"
+      },
+      "rhythm_sensitivity": {
+        "name": "Rhythm sensitivity (experimental)"
+      }
+    }
+  },
+  "exceptions": {
+    "auth_failed": {
+      "message": "The L2 rejected Bluetooth authentication. Update the integration credentials."
+    },
+    "invalid_control": {
+      "message": "Invalid colour/effect combination. Check the active mode and experimental options."
+    },
+    "command_failed": {
+      "message": "The L2 Bluetooth command failed. Check proximity and credentials, then refresh state."
+    },
+    "refresh_failed": {
+      "message": "The L2 did not provide a fresh state report. Check its power, proximity and active Bluetooth proxy."
+    },
+    "invalid_number": {
+      "message": "Select a compatible experimental effect first, and use an integer within the slider range."
     }
   }
 }

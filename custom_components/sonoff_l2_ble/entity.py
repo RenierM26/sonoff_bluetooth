@@ -25,6 +25,4 @@ class L2Entity(CoordinatorEntity[L2Coordinator]):
 
     @property
     def available(self) -> bool:
-        # A failed read must not strand the light or prevent a manual retry.
-        # Individual commands still fail safely if Bluetooth is unreachable.
-        return True
+        return self.coordinator.available

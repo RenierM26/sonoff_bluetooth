@@ -120,7 +120,9 @@ possible account-sharing permission. Close the eWeLink app if it is holding the
 strip's sole BLE connection.
 
 To change connection settings later: open this integration's **⋮ → Reconfigure**.
-You can update its name, address, ID or credentials. Saved keys are never sent back
+You can update its name and credentials for the same strip. A different Bluetooth
+address or device ID must be added as a new integration; reconfiguration does not
+rebind registry identities to replacement hardware. Saved keys are never sent back
 into the form; **blank key fields during reconfiguration keep existing keys**.
 Keys are masked in the UI but are stored in HA's config entry, not encrypted at rest.
 
@@ -167,8 +169,12 @@ At integration startup, a best-effort read opens a **fresh authenticated Bluetoo
 session**, waits up to four seconds after authentication for the device's state
 report, then disconnects. If no report is received, state remains unknown; this
 never powers on or changes the strip. A **Refresh state** button repeats the read.
-It remains usable after a failed read, and an unsuccessful read does not strand
-light commands. It may take additional time to establish/authenticate the BLE
+The button remains usable after a failed read. Lights and number entities become
+unavailable when HA loses the strip or a connection attempt fails. Connectable
+advertisements make the strip reachable again without any GATT command. Its state
+is then unknown until read or an acknowledged command; missing reports do not keep
+showing stale values. A connected/advertising strip without a valid state report
+can still accept commands, but its power/colour state is unknown. It may take additional time to establish/authenticate the BLE
 connection before the four-second report window starts.
 
 Fresh reports replace cached fields: an OFF-only report does not invent a colour
@@ -187,13 +193,26 @@ created. Local control needs only HA, its Bluetooth adapter/proxy and the L2—n
 SonoffLAN, an eWeLink app, a cloud session, token refresh, or Internet access after
 credentials are imported. Internet-blocked operation still awaits a physical test.
 
+### Credential recovery and diagnostics
+
+An **explicit Bluetooth authentication rejection** opens HA's native
+reauthentication flow. Update the saved keys without replacing the config entry
+or changing the light's identity. Timeouts, malformed packets and absent state
+reports do not falsely trigger reauthentication. A key that fails before a valid
+auth result cannot reliably be distinguished from corrupt data; use Reconfigure
+if no native repair prompt appears.
+
+Use **Download diagnostics** on the integration for troubleshooting. The export
+whitelists operational flags and local options; it omits credentials/tokens,
+addresses, IDs, names, raw device data and exception messages.
+
 ### Experimental native effects and rhythm
 
 In the same options dialog, enable **experimental effect and controller-rhythm
 controls**. This is **off by default**: their payloads are traced from the exact
 L2/UIID137 app path but have not yet been physically validated.
 
-- The normal HA light effect picker exposes **21 presets**, **Solid**, and four
+- The normal HA light effect picker exposes **21 presets**, **off** (static colour), and four
   controller rhythm presets (Classic, Mild, Dynamic, Disco).
 - Use `light.turn_on` with `effect: Reading`, for example, or include the effect
   in an HA scene/automation. No separate cloud/app control surface is introduced.
@@ -203,7 +222,7 @@ L2/UIID137 app path but have not yet been physically validated.
 - The native **Rhythm sensitivity (experimental)** number is available in rhythm
   mode (0-100%). Numbers change settings without explicitly powering on an OFF
   strip. Selecting an effect with `light.turn_on` does power it on.
-- Selecting an RGB colour or **Solid** exits effects/rhythm. RGB and an effect
+- Selecting an RGB colour or **off** exits effects/rhythm. RGB and an effect
   cannot be requested in one action. Brightness in rhythm/unknown modes is rejected
   until its behaviour is validated; choose an RGB colour first.
 
@@ -254,6 +273,7 @@ and Home Assistant hassfest validation. See [CONTRIBUTING.md](CONTRIBUTING.md).
 - [Protocol reconstruction](docs/PROTOCOL.md)
 - [Artifact provenance](docs/PROVENANCE.json)
 - [Hardware validation and remaining checks](docs/HARDWARE-TEST.md)
+- [HA best-practices code review](docs/REVIEW.md)
 - [Feature comparison and priorities](docs/FEATURES.md)
 - [Changelog](CHANGELOG.md)
 - [Report an issue](https://github.com/RenierM26/sonoff_bluetooth/issues)

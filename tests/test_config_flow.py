@@ -126,8 +126,8 @@ async def test_reconfigure_preserves_blank_keys_and_reloads_entry():
         )
     assert result["reason"] == "reconfigure_successful"
     kwargs = instance.async_update_reload_and_abort.call_args.kwargs
-    assert kwargs["data"]["device_apikey"] == DATA["device_apikey"]
-    assert kwargs["data"]["account_apikey"] == DATA["account_apikey"]
+    assert kwargs["data_updates"]["device_apikey"] == DATA["device_apikey"]
+    assert kwargs["data_updates"]["account_apikey"] == DATA["account_apikey"]
     assert kwargs["title"] == "New name"
     assert instance.async_update_reload_and_abort.call_args.args == (entry,)
 
@@ -142,7 +142,7 @@ async def test_reconfigure_can_replace_keys():
             {**DATA, "device_apikey": "new-device", "account_apikey": "new-account"}
         )
     assert (
-        instance.async_update_reload_and_abort.call_args.kwargs["data"]["device_apikey"]
+        instance.async_update_reload_and_abort.call_args.kwargs["data_updates"]["device_apikey"]
         == "new-device"
     )
 

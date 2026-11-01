@@ -9,11 +9,17 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.components import bluetooth
+from homeassistant.core import callback
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    HomeAssistantError,
+    ServiceValidationError,
+)
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import CONF_EXPERIMENTAL, CONF_POLL_INTERVAL, DOMAIN
-from .protocol import ProtocolError
+from .protocol import AuthenticationError, ProtocolError
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -36,19 +42,72 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
             name=DOMAIN,
             update_interval=timedelta(seconds=max(30, interval)) if interval else None,
         )
+        self.entry = entry
+        self.reachable: bool | None = None
+        self.auth_failed = False
         self.transport = transport
         self.experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
         self.reported = False
         self.data = {}
         self.operation_lock = asyncio.Lock()
 
+    @callback
+    def async_track_presence(self) -> None:
+        """Observe HA's existing scanner; never connect or start our own scanner."""
+        address = self.entry.data["address"]
+        self.reachable = bluetooth.async_address_present(self.hass, address, connectable=True)
+
+        @callback
+        def discovered(info: bluetooth.BluetoothServiceInfoBleak) -> None:
+            if info.connectable and self.reachable is not True:
+                self.data = {}  # Rediscovery is not a device-state report.
+                self.reachable = True
+                self.async_update_listeners()
+
+        @callback
+        def unavailable(info: bluetooth.BluetoothServiceInfoBleak) -> None:
+            self.reachable = False
+            self.reported = False
+            self.data = {}
+            self.async_update_listeners()
+
+        self.entry.async_on_unload(
+            bluetooth.async_register_advertisement_callback(self.hass, discovered, address)
+        )
+        self.entry.async_on_unload(
+            bluetooth.async_track_unavailable(self.hass, unavailable, address, connectable=True)
+        )
+
+    @property
+    def available(self) -> bool:
+        return not self.auth_failed and (
+            self.reachable if self.reachable is not None else self.last_update_success
+        )
+
     async def _async_update_data(self) -> dict[str, Any]:
         async with self.operation_lock:
             try:
                 data = await self.transport.read_state()
-            except ProtocolError, BleakError, TimeoutError, OSError:
+            except AuthenticationError:
                 self.reported = False
+                self.auth_failed = True
+                raise ConfigEntryAuthFailed(
+                    "L2 authentication was rejected",
+                    translation_domain=DOMAIN,
+                    translation_key="auth_failed",
+                ) from None
+            except BleakError, TimeoutError, OSError:
+                self.reported = False
+                self.reachable = False
                 raise UpdateFailed("L2 state refresh failed; check Bluetooth proximity") from None
+            except ProtocolError:
+                # Connected but missing/invalid state means UNKNOWN, not old state.
+                # An advertising command-capable strip can still accept controls.
+                self.data = {}
+                self.reported = False
+                raise UpdateFailed("L2 did not provide a valid state report") from None
+            self.reachable = True
+            self.auth_failed = False
             self.reported = True
             return data
 
@@ -60,21 +119,39 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # Build mode-dependent commands only after preceding reads/writes.
                 params = request(self.data) if callable(request) else request
             except ValueError:
-                raise HomeAssistantError(
-                    "Invalid L2 colour/effect combination; check mode and experimental options"
+                raise ServiceValidationError(
+                    "Invalid L2 colour/effect combination; check mode and experimental options",
+                    translation_domain=DOMAIN,
+                    translation_key="invalid_control",
                 ) from None
             try:
                 await self.transport.send_update(params)
+            except AuthenticationError:
+                self.reported = False
+                self.auth_failed = True
+                self.async_update_listeners()
+                self.entry.async_start_reauth(self.hass)
+                raise HomeAssistantError(
+                    "L2 authentication was rejected",
+                    translation_domain=DOMAIN,
+                    translation_key="auth_failed",
+                ) from None
             except asyncio.CancelledError:
                 self.reported = False
                 self.async_update_listeners()
                 raise
-            except ProtocolError, BleakError, TimeoutError, OSError:
+            except (ProtocolError, BleakError, TimeoutError, OSError) as err:
                 # A lost ACK may mean the device changed despite our failed call.
                 self.reported = False
+                if not isinstance(err, ProtocolError):
+                    self.reachable = False
                 self.async_update_listeners()
                 raise HomeAssistantError(
-                    "L2 Bluetooth command failed; check proximity and credentials"
+                    "L2 Bluetooth command failed; check proximity and credentials",
+                    translation_domain=DOMAIN,
+                    translation_key="command_failed",
                 ) from None
+            self.reachable = True
+            self.auth_failed = False
             self.reported = False
             self.async_set_updated_data({**self.data, **params})

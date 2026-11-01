@@ -12,6 +12,7 @@ from .protocol import (
     NOTIFY,
     SERVICE,
     WRITE,
+    AuthenticationError,
     FrameBuffer,
     ProtocolError,
     auth_start,
@@ -20,6 +21,8 @@ from .protocol import (
     request,
 )
 from .state import sanitize_report
+
+SESSION_TIMEOUT = 45
 
 
 class GattCharacteristic(Protocol):
@@ -96,7 +99,11 @@ class L2Transport:
         async with self.lock:
             client = await self.factory()
             try:
-                return await self._connected_session(client, params, action, read_state=read_state)
+                # Includes notify setup and all writes, not only response waits.
+                async with asyncio.timeout(SESSION_TIMEOUT):
+                    return await self._connected_session(
+                        client, params, action, read_state=read_state
+                    )
             finally:
                 # Cleanup failure must not mask the command/authentication result.
                 with suppress(Exception):
@@ -171,8 +178,10 @@ class L2Transport:
         challenge = await exchange(packet, 1)
         assert isinstance(challenge, bytes)
         token_reply = await exchange(auth_token(self.device_apikey, app_code, challenge), 3)
-        if not isinstance(token_reply, bytes) or not token_reply or token_reply[0] != 0:
-            raise ProtocolError("L2 Bluetooth authentication was rejected")
+        if not isinstance(token_reply, bytes) or not token_reply:
+            raise ProtocolError("Invalid L2 Bluetooth authentication response")
+        if token_reply[0] != 0:
+            raise AuthenticationError("L2 Bluetooth authentication was rejected")
         if read_state:
             # Reports buffered during authentication are from this fresh session.
             # Never reuse reports from a control session or a previous connection.

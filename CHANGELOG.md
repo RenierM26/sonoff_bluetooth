@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.1 — HA developer-guidance review
+
+- Correct dynamic effect colour modes: preset effects expose brightness only,
+  rhythm exposes on/off, and static RGB uses HA's standard `effect: off`.
+  Allow static scene restoration with effect-off plus RGB; keep Solid as an alias.
+- Track connectable Bluetooth presence and unavailability using HA-managed
+  callbacks, automatically remove listeners on unload, and keep only the recovery
+  button always available. Rediscovery/missing state never display stale values.
+- Distinguish explicit authentication rejection from connection/protocol errors;
+  add native same-entry reauthentication without false prompts on timeouts.
+- Prevent reconfiguration from rebinding MAC/device ID and orphaning registry IDs.
+- Bound the entire connected GATT session, including notify setup and writes.
+- Add credential/identifier-safe whitelisted diagnostics, translated entity names
+  and runtime action exceptions, and classify invalid actions as validation errors.
+- Declare local_polling for optional local readback, explicit platform concurrency,
+  and document reviewed official sources, fixes, deliberate trade-offs and limits.
+
 ## 0.4.0 — Native local state and experimental effects
 
 - HA DataUpdateCoordinator and shared native light/button/number entities; no

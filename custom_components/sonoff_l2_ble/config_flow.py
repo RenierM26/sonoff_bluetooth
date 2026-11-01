@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Mapping
 from typing import Any
 
 import probatio as vol
@@ -209,10 +210,22 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         return await self._step(user_input, reconfigure=True)
 
-    async def _step(
-        self, user_input: dict[str, Any] | None, *, reconfigure: bool
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        entry = self._get_reconfigure_entry() if reconfigure else None
+        return await self._step(user_input, reconfigure=False, reauth=True)
+
+    async def _step(
+        self, user_input: dict[str, Any] | None, *, reconfigure: bool, reauth: bool = False
+    ) -> ConfigFlowResult:
+        entry = (
+            self._get_reauth_entry()
+            if reauth
+            else (self._get_reconfigure_entry() if reconfigure else None)
+        )
         existing = dict(entry.data) if entry else None
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -223,6 +236,14 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_device_id"
             elif not all(data.values()):
                 errors["base"] = "missing_fields"
+            elif existing and (
+                data["address"] != existing["address"]
+                or data[CONF_DEVICE_ID] != existing[CONF_DEVICE_ID]
+            ):
+                # A different BLE MAC changes entity/device unique IDs. Do not
+                # silently orphan registry entries or attach old automations to
+                # a replacement strip. Add that device as a new integration.
+                errors["base"] = "identity_mismatch"
             else:
                 await self.async_set_unique_id(data["address"])
                 if entry is None:
@@ -241,11 +262,14 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else:
                     if entry:
                         return self.async_update_reload_and_abort(
-                            entry, unique_id=data["address"], title=data["name"], data=data
+                            entry,
+                            title=data["name"],
+                            data_updates=data,
+                            reason="reauth_successful" if reauth else "reconfigure_successful",
                         )
                     return self.async_create_entry(title=data["name"], data=data)
         return self.async_show_form(
-            step_id="reconfigure" if reconfigure else "manual",
+            step_id="reauth_confirm" if reauth else ("reconfigure" if reconfigure else "manual"),
             data_schema=_schema(existing),
             errors=errors,
         )

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.light.const import EFFECT_OFF
+
 from .protocol import ProtocolError, light_params
 
 # eWeLink UIID137 recommendScene (module 5273); not generic modes 27-30.
@@ -74,7 +76,7 @@ def sanitize_report(message: dict[str, Any], device_id: str) -> dict[str, Any]:
 def effect_name(data: dict[str, Any]) -> str | None:
     mode = data.get("mode")
     if mode in (0, 1):
-        return STATIC_EFFECT
+        return EFFECT_OFF
     if mode == 4:
         return next(
             (name for name, index in RHYTHMS.items() if index == data.get("rhythmMode")), None
@@ -99,18 +101,19 @@ def turn_on_params(
     experimental: bool = False,
 ) -> dict[str, Any]:
     """Static colours exit an effect; brightness alone never silently cancels one."""
-    if effect is not None and not experimental:
+    static = effect in (STATIC_EFFECT, EFFECT_OFF)
+    if effect is not None and not static and not experimental:
         raise ValueError("Enable experimental effects in integration options first")
-    if effect is not None and rgb is not None:
+    if effect is not None and not static and rgb is not None:
         raise ValueError("Choose an effect or an RGB colour, not both")
-    if effect is not None and effect not in (STATIC_EFFECT, *EFFECTS, *RHYTHMS):
+    if effect is not None and effect not in (STATIC_EFFECT, EFFECT_OFF, *EFFECTS, *RHYTHMS):
         raise ValueError("Unknown L2 effect")
     mode = data.get("mode")
     if effect in EFFECTS:
         mode = EFFECTS[effect]
     elif effect in RHYTHMS:
         mode = 4
-    elif effect == STATIC_EFFECT or rgb is not None:
+    elif static or rgb is not None:
         mode = 0
     if mode in EFFECTS.values():
         if not experimental:
@@ -138,7 +141,7 @@ def turn_on_params(
     if rgb is None and effect is None and level is not None and mode not in (None, 0, 1):
         raise ValueError("Brightness for this mode is unknown; select an RGB colour first")
     params = light_params(True, level, rgb)
-    if effect == STATIC_EFFECT:
+    if static:
         params["mode"] = 0
     elif mode == 1 and rgb is None and level is not None:
         params["mode"] = 1
