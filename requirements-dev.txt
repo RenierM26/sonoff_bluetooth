@@ -1,4 +1,4 @@
-homeassistant>=2026.2.3
+homeassistant>=2026.10.4
 mypy==1.20.2
 pytest==9.2.0
 pytest-asyncio==1.4.1
