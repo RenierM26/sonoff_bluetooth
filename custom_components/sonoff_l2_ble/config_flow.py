@@ -13,6 +13,14 @@ from homeassistant.helpers import selector
 
 from . import make_transport
 from .const import CONF_ACCOUNT_APIKEY, CONF_DEVICE_APIKEY, CONF_DEVICE_ID, DOMAIN
+from .discovery import (
+    Candidate,
+    ImportFailed,
+    InvalidToken,
+    bluetooth_addresses,
+    sonofflan_candidates,
+    token_candidates,
+)
 from .protocol import ProtocolError
 
 # Select the schema library declared by this HA version, not whichever optional
@@ -64,8 +72,128 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        self._candidates: list[Candidate] = []
+        self._selected: Candidate | None = None
+        self._addresses: list[str] = []
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return self.async_show_menu(step_id="user", menu_options=["sonofflan", "token", "manual"])
+
+    async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         return await self._step(user_input, reconfigure=False)
+
+    async def async_step_sonofflan(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if not self._candidates:
+            self._candidates = sonofflan_candidates(self.hass)
+        return await self._select_device("sonofflan", user_input)
+
+    async def async_step_token(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                self._candidates = await token_candidates(
+                    self.hass, str(user_input.get("token", ""))
+                )
+            except InvalidToken:
+                errors["base"] = "invalid_token"
+            except ImportFailed:
+                errors["base"] = "cloud_failed"
+            else:
+                return await self.async_step_device()
+        return self.async_show_form(
+            step_id="token",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("token"): selector.TextSelector(
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_device(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        return await self._select_device("device", user_input)
+
+    async def _select_device(
+        self, step_id: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        if not self._candidates:
+            return self.async_abort(reason="no_devices")
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            choice = str(user_input.get("device", ""))
+            if choice in {str(i) for i in range(len(self._candidates))}:
+                self._selected = self._candidates[int(choice)]
+                self._addresses = bluetooth_addresses(self.hass, self._selected.device_id)
+                return await self.async_step_confirm()
+            errors["base"] = "invalid_device"
+        options = [
+            selector.SelectOptionDict(
+                value=str(i), label=f"{candidate.name} ({candidate.device_id})"
+            )
+            for i, candidate in enumerate(self._candidates)
+        ]
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(
+                {
+                    vol.Required("device"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=options, mode=selector.SelectSelectorMode.DROPDOWN
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        candidate = self._selected
+        if candidate is None:
+            return self.async_abort(reason="no_devices")
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            result = await self._step(
+                {
+                    "name": user_input.get("name", candidate.name),
+                    "address": user_input.get("address", ""),
+                    CONF_DEVICE_ID: candidate.device_id,
+                    CONF_DEVICE_APIKEY: candidate.device_apikey,
+                    CONF_ACCOUNT_APIKEY: candidate.account_apikey,
+                },
+                reconfigure=False,
+            )
+            if result["type"] != "form":
+                self._candidates = []
+                self._selected = None
+                return result
+            errors = result.get("errors") or {}
+        # Retry discovery if the user powered on or moved the strip after selection.
+        self._addresses = bluetooth_addresses(self.hass, candidate.device_id)
+        default_address = self._addresses[0] if len(self._addresses) == 1 else ""
+        existing = user_input or {}
+        return self.async_show_form(
+            step_id="confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("name", default=existing.get("name", candidate.name)): str,
+                    vol.Required(
+                        "address", default=existing.get("address") or default_address
+                    ): str,
+                }
+            ),
+            description_placeholders={
+                "device_id": candidate.device_id,
+                "addresses": ", ".join(self._addresses) or "—",
+            },
+            errors=errors,
+        )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -108,7 +236,7 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         )
                     return self.async_create_entry(title=data["name"], data=data)
         return self.async_show_form(
-            step_id="reconfigure" if reconfigure else "user",
+            step_id="reconfigure" if reconfigure else "manual",
             data_schema=_schema(existing),
             errors=errors,
         )

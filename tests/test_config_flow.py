@@ -39,7 +39,7 @@ def flow():
 async def test_invalid_input_does_not_connect(field, value, error):
     instance = flow()
     with patch("custom_components.sonoff_l2_ble.config_flow.make_transport") as make:
-        result = await instance.async_step_user({**DATA, field: value})
+        result = await instance.async_step_manual({**DATA, field: value})
     assert result["errors"] == {"base": error}
     make.assert_not_called()
 
@@ -48,7 +48,7 @@ async def test_success_normalizes_and_only_authenticates():
     instance = flow()
     device = SimpleNamespace(authenticate=AsyncMock(), send_update=AsyncMock())
     with patch("custom_components.sonoff_l2_ble.config_flow.make_transport", return_value=device):
-        result = await instance.async_step_user(
+        result = await instance.async_step_manual(
             {**DATA, "address": " aa:bb:cc:dd:ee:ff ", "name": " Strip "}
         )
     assert result["type"] == "create_entry"
@@ -63,7 +63,7 @@ async def test_blank_optional_account_key_defaults_to_device_key():
     data = dict(DATA)
     data.pop("account_apikey")
     with patch("custom_components.sonoff_l2_ble.config_flow.make_transport", return_value=device):
-        result = await instance.async_step_user(data)
+        result = await instance.async_step_manual(data)
     assert result["data"]["account_apikey"] == DATA["device_apikey"]
 
 
@@ -82,7 +82,7 @@ async def test_connection_errors_are_safe_and_retryable(exception, error):
         "custom_components.sonoff_l2_ble.config_flow.make_transport",
         return_value=SimpleNamespace(authenticate=AsyncMock(side_effect=exception)),
     ):
-        result = await instance.async_step_user(DATA)
+        result = await instance.async_step_manual(DATA)
     assert result["errors"] == {"base": error}
     assert "hidden-key" not in str(result)
 
@@ -94,7 +94,7 @@ async def test_duplicate_aborts_before_authentication():
         patch("custom_components.sonoff_l2_ble.config_flow.make_transport") as make,
         pytest.raises(AbortFlow),
     ):
-        await instance.async_step_user(DATA)
+        await instance.async_step_manual(DATA)
     make.assert_not_called()
 
 
@@ -163,7 +163,7 @@ async def test_form_serializes_through_this_ha_frontend_schema_codec():
     from homeassistant.helpers.data_entry_flow import FlowManagerIndexView
 
     instance = flow()
-    result = await instance.async_step_user()
+    result = await instance.async_step_manual()
     serialized = FlowManagerIndexView(Mock())._prepare_result_json(result)
     fields = serialized["data_schema"]
     key = next(field for field in fields if field["name"] == "device_apikey")

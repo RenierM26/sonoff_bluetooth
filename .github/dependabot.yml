@@ -8,3 +8,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # These express the supported HA floor or mirror HA integration manifests.
+    # Upgrade them together with the explicit HA CI matrix, not independently.
+    ignore:
+      - dependency-name: homeassistant
+      - dependency-name: aiousbwatcher
+      - dependency-name: pyserial
+      - dependency-name: serialx
+      - dependency-name: aiohasupervisor

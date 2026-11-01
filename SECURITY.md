@@ -14,3 +14,12 @@ The device protocol requires legacy MD5 key derivation and a fixed-IV AES-CBC
 scheme. This integration reproduces that protocol for compatibility; it does not
 claim to improve the vendor's cryptographic design. Runtime control is local, but
 Bluetooth proximity alone should not be treated as an authorization boundary.
+
+Token import uses a region-prefixed SonoffLAN token only to read profile/device
+metadata over fixed eWeLink HTTPS hosts, with redirects disabled. The token is
+not saved. It has account access: do not paste it into issues, screenshots or logs.
+Only the selected strip's device/account apikeys are retained in the HA entry.
+SonoffLAN import reads its in-memory device registry without reading its saved
+password, editing its storage or opening another cloud session. Imported keys are
+never sent back as form values. SonoffLAN itself may still use cloud access;
+this integration's normal BLE control does not.

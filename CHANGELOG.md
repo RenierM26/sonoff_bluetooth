@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0 — Assisted setup
+
+- Setup menu: import from an already-loaded SonoffLAN registry, import with a
+  region-prefixed eWeLink token, or enter credentials manually.
+- Filter supported L2/UIID 137 records, select a strip, and match its exact BLE
+  advertisement using HA-owned connectable adapters/proxies.
+- Confirmation/editing of name and BLE address; absent or ambiguous discoveries
+  preserve manual address entry. Authentication-only validation remains unchanged.
+- Token import reads profile/device data across homes over fixed HTTPS hosts,
+  disables redirects, and never saves the token or sends light commands.
+- Imported keys stay in backend flow state and only the selected keys are saved;
+  no saved credentials are returned to frontend forms. Setup forms tested through
+  the native HA schema serializer on minimum/current HA versions.
+- Update mypy to 2.4.1. Preserve HA-compatible serialx/Supervisor pins and the
+  minimum HA floor; prevent independent Dependabot bumps of matrix-managed pins.
+- BLE protocol/physical validation is unchanged; the new import paths are covered
+  by synthetic tests, not yet a live cloud-token or installed-HA acceptance test.
+
 ## 0.2.0 — Initial public repository
 
 - Original-firmware L2 Bluetooth control: on/off, RGB and brightness.

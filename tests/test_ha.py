@@ -57,13 +57,13 @@ async def test_ha_zero_brightness_means_off():
 @pytest.mark.asyncio
 async def test_ha_form_renders_with_masked_credential_fields():
     flow = L2ConfigFlow()
-    form = await flow.async_step_user()
-    assert form["step_id"] == "user"
+    form = await flow.async_step_manual()
+    assert form["step_id"] == "manual"
     schema = form["data_schema"]
     fields = {str(key): value for key, value in schema.schema.items()}
     assert fields["device_apikey"].config["type"] == "password"
     assert fields["account_apikey"].config["type"] == "password"
-    invalid = await flow.async_step_user(
+    invalid = await flow.async_step_manual(
         {
             "name": "L2",
             "address": "not a MAC",

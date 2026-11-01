@@ -25,16 +25,19 @@ flowchart LR
 A nearby USB Bluetooth adapter on the HA host can replace the proxy. HA manages
 adapter selection and existing ESPHome proxies; **do not disable your ESPHome
 integration for routine use**. No custom firmware is required on the L2. There are
-no eWeLink cloud calls or Wi-Fi light commands in this integration. The bridge still
-uses the local network, and obtaining credentials initially may involve eWeLink.
+no eWeLink cloud calls or Wi-Fi light commands during normal control. Optional
+**token-based setup** contacts eWeLink once to obtain credentials. The bridge
+still uses the local network.
 
 ## Requirements
 
 - Home Assistant **2026.2.3 or newer**; CI covers 2026.2.3 and 2026.10.4.
 - A SONOFF **L2 / UIID 137**, powered and advertising its Bluetooth control service.
 - A connectable Bluetooth adapter or **active ESPHome Bluetooth proxy** in range.
-- The strip's **Bluetooth MAC**, eWeLink **device ID**, and **device `apikey`**.
-- For a shared device, possibly a separate **account `apikey`** (`selfApikey`).
+- Credentials imported from running **SonoffLAN**, a valid **region-prefixed token**,
+  or manual BLE MAC/device ID/device `apikey` values.
+- For shared devices, the correct **account `apikey`** (`selfApikey`); token import
+  obtains this from the account profile.
 
 An ESP32-based switch can act as a proxy if its chip and firmware support Bluetooth
 and have sufficient resources. ESP8266/ESP8285 and ESP32-S2 cannot. See the
@@ -66,6 +69,39 @@ component directory; the asset contains the component files at its root.
 ## Configuration flow
 
 **Settings → Devices & services → Add integration → SONOFF Bluetooth**
+
+Choose one of three setup methods:
+
+1. **Import from running SonoffLAN** (recommended when already installed). Select
+   your L2 from its loaded device records; no token copying or new cloud login is
+   needed. This reads the optional SonoffLAN live registry, never modifies its
+   configuration/storage, and never takes over its cloud session. SonoffLAN must
+   have finished loading its devices. This optional private API can change; token
+   and manual setup remain available if an upstream change breaks import.
+2. **Import using an eWeLink token**. Paste the complete `region:token` value from
+   SonoffLAN, e.g. `eu:YOUR_TOKEN` (`eu`, `us`, `as`, `cn` supported). Setup contacts
+   the corresponding eWeLink HTTPS API to read your profile and devices across
+   your homes, including shared device records. It does not log in with a password,
+   refresh tokens, open a cloud WebSocket or control devices. Expired/rejected
+   tokens must be replaced. Only supported L2/UIID 137 records with a device key
+   are offered; this is not general SONOFF device discovery.
+3. **Enter credentials manually**. Use the fields below if automatic import is
+   unavailable, or you already have the keys.
+
+For either import method, choose the strip, then confirm its name and Bluetooth
+address. The flow matches the exact `ck_<deviceid>` advertisement already collected
+by HA's **connectable** Bluetooth adapters/proxies. One match is filled in; absent
+or ambiguous matches require the correct BLE MAC. Power on the strip, close any
+connected eWeLink app, and place an active proxy nearby. You can retry the step as
+new advertisements arrive. Imported keys are **never returned to frontend forms**.
+
+The token is used only for the import request and **is not saved in the config
+entry**. Only the selected device's required Bluetooth credentials are retained.
+Normal control does not contact eWeLink, and SonoffLAN is not a runtime dependency.
+If a local-only SonoffLAN registry has no account profile, import uses the owned-
+device key default; shared devices may instead need token or manual setup.
+
+### Manual fields
 
 | Field | What to enter |
 | --- | --- |
@@ -107,7 +143,7 @@ Read the file locally to fill in the UI, then remove your temporary export when
 no longer needed. Do not commit or attach the file to an issue.
 
 If the strip was never paired with your account or cached by SonoffLAN, this
-helper cannot manufacture its key. No cloud login/commissioning flow is included.
+helper cannot manufacture its key. Token import is available above, but no password login/factory commissioning flow is included.
 A LAN `devicekey`, access token or OAuth secret cannot substitute for `apikey`.
 
 ## Usage and state

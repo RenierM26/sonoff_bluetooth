@@ -21,6 +21,15 @@ an exact model/UIID binding and physical evidence, not generic UUID guesses.
 The repository retains Apache-2.0 licensing. Do not submit APKs, decompiled app
 source, authentication tokens, keys, private device addresses or household backups.
 
+## Dependency updates
+
+Dependabot tracks tool and action releases. The `homeassistant` requirement states
+our supported floor; current HA is already tested explicitly in the CI matrix.
+Optional USB/Supervisor packages in requirements-dev.txt mirror the matching HA
+integration manifests. Do not independently bump those pins: update them when the
+HA matrix moves, and verify both environments. Mypy and other development tools
+can be updated after both matrix checks pass.
+
 ## Releases
 
 Update `custom_components/sonoff_l2_ble/manifest.json` and CHANGELOG.md together.

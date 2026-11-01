@@ -2,17 +2,6 @@
   "title": "SONOFF Bluetooth",
   "config": {
     "step": {
-      "user": {
-        "title": "Connect a SONOFF L2 over Bluetooth",
-        "description": "Requires an L2 (UIID 137), a connectable Bluetooth adapter/proxy, and existing eWeLink credentials. Leave account apikey blank to use the device apikey for an owned device. Shared devices may need a different account apikey. Setup authenticates only; it does not change the light.",
-        "data": {
-          "name": "Name",
-          "address": "Bluetooth MAC address",
-          "device_id": "eWeLink device ID",
-          "device_apikey": "Device apikey (not LAN devicekey)",
-          "account_apikey": "Account apikey (optional for owner devices)"
-        }
-      },
       "reconfigure": {
         "title": "Update your L2 connection",
         "description": "Update the address, name or credentials. Leave credential fields blank to keep their saved values. Validation authenticates without changing the light.",
@@ -23,6 +12,55 @@
           "device_apikey": "Device apikey (not LAN devicekey)",
           "account_apikey": "Account apikey (optional for owner devices)"
         }
+      },
+      "manual": {
+        "title": "Connect a SONOFF L2 over Bluetooth",
+        "description": "Requires an L2 (UIID 137), a connectable Bluetooth adapter/proxy, and existing eWeLink credentials. Leave account apikey blank to use the device apikey for an owned device. Shared devices may need a different account apikey. Setup authenticates only; it does not change the light.",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth MAC address",
+          "device_id": "eWeLink device ID",
+          "device_apikey": "Device apikey (not LAN devicekey)",
+          "account_apikey": "Account apikey (optional for owner devices)"
+        }
+      },
+      "user": {
+        "title": "Set up SONOFF Bluetooth",
+        "description": "Import your L2 credentials, or enter them manually. All control stays local after setup. Setup only authenticates; it does not change the light.",
+        "menu_options": {
+          "sonofflan": "Import from running SonoffLAN",
+          "token": "Import using an eWeLink token",
+          "manual": "Enter credentials manually"
+        }
+      },
+      "token": {
+        "title": "Import from eWeLink",
+        "description": "Paste the region-prefixed token from SonoffLAN (for example eu:token). This contacts eWeLink to read your account and device keys. The token is not saved. An expired token must be replaced.",
+        "data": {
+          "token": "SonoffLAN token (region:token)"
+        }
+      },
+      "sonofflan": {
+        "title": "Choose an L2 strip",
+        "description": "Only L2 devices (UIID 137) with available credentials are listed. SonoffLAN import reads its already-loaded records without logging in or changing that integration. If SonoffLAN is local-only without account details, the owner-key default is used; shared devices may require manual setup.",
+        "data": {
+          "device": "L2 strip"
+        }
+      },
+      "device": {
+        "title": "Choose an L2 strip",
+        "description": "Only L2 devices (UIID 137) with available credentials are listed. SonoffLAN import reads its already-loaded records without logging in or changing that integration. If SonoffLAN is local-only without account details, the owner-key default is used; shared devices may require manual setup.",
+        "data": {
+          "device": "L2 strip"
+        }
+      },
+      "confirm": {
+        "title": "Confirm Bluetooth connection",
+        "description": "Device ID: {device_id}. Matching connectable Bluetooth addresses: {addresses}. One match is filled automatically. If none is found, power on the strip, check your active proxy, then reopen this step; or enter its Bluetooth MAC manually. Multiple matches require choosing the correct address. Setup authenticates without changing the light.",
+        "data": {
+          "name": "Name",
+          "address": "Bluetooth MAC address"
+        }
       }
     },
     "error": {
@@ -30,11 +68,15 @@
       "invalid_device_id": "Use the 10-character hexadecimal eWeLink device ID.",
       "missing_fields": "Complete all required fields.",
       "cannot_connect": "Cannot connect. Close eWeLink, check proximity, and ensure your ESPHome Bluetooth proxy is active.",
-      "auth_failed": "Authentication or device identity check failed. Check the device apikey (not devicekey), device ID and firmware."
+      "auth_failed": "Authentication or device identity check failed. Check the device apikey (not devicekey), device ID and firmware.",
+      "invalid_token": "Token is invalid, rejected or expired. Use the complete region:token value from SonoffLAN.",
+      "cloud_failed": "Could not read eWeLink account/device data. Check connectivity and retry.",
+      "invalid_device": "Choose a device from the list."
     },
     "abort": {
       "already_configured": "This Bluetooth address is already configured.",
-      "reconfigure_successful": "Connection settings updated."
+      "reconfigure_successful": "Connection settings updated.",
+      "no_devices": "No supported L2 devices with keys were found. Ensure SonoffLAN is loaded with its devices, try token import, or use manual setup."
     }
   }
 }

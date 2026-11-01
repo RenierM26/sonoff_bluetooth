@@ -14,3 +14,11 @@
   state until a matching ACK, and separate device reports from visual evidence.
 - Preserve Apache-2.0. Keep manifest version, HACS minimum HA version, docs and
   release notes consistent; supported models must not be overstated.
+
+- Assisted setup reads optional SonoffLAN live records or the fixed regional
+  eWeLink APIs only at explicit user request. Never copy a token into entry data,
+  follow cloud redirects, log remote responses, expose imported keys in forms,
+  or add runtime cloud requests. Keep native minimum/current HA form serialization
+  tests for every setup path and reconfiguration.
+- HA-floor and optional HA-manifest dependency pins are matrix-managed; update
+  them together, not via isolated Dependabot major/minor bumps.
