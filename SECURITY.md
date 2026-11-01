@@ -25,3 +25,17 @@ The original controller requires legacy MD5-derived AES-CBC with a fixed IV.
 This implementation preserves wire compatibility; it does not upgrade the
 controller's cryptography. Only use credentials for devices you own or manage.
 Runtime control is local Bluetooth; keep Home Assistant and proxies updated.
+
+
+For an accidentally exposed credential, remove the public copy and invalidate or
+rotate the credential through the vendor/account service. The export helper's
+owner-only output must never be committed. Bluetooth proximity alone is not an
+authorization boundary.
+
+Token import reads profile/device metadata only through fixed eWeLink HTTPS hosts
+with redirects disabled. The token grants account access: never put it in reports,
+screenshots or logs. Only the selected strip's device/account keys are retained.
+SonoffLAN import reads live in-memory records, not saved passwords or storage,
+and does not open another cloud session. Imported keys are never form defaults.
+SonoffLAN itself may still use cloud access; this integration's normal BLE control
+remains independent of it.

@@ -22,6 +22,10 @@ uv pip install -r requirements-dev.txt
 .venv/bin/pytest --cov
 ```
 
+Optional pre-commit hooks run Ruff and JSON/YAML/whitespace checks; install
+pre-commit separately if desired. Preserve Apache-2.0 licensing. Tests must never
+scan/connect to real hardware automatically.
+
 Use a feature branch and pull request. Both Python CI and Home Assistant manifest
 validation must pass against current main, and review threads must be resolved.
 Squash merging keeps main linear; merged branches are deleted automatically.
@@ -33,6 +37,15 @@ Bluetooth scanning, serialize device operations and never equate ACKs with fresh
 state or visible output. Setup validation must not change the light. Changes to
 device behaviour need meaningful synthetic tests and separately documented
 attended hardware evidence. See [repository instructions](AGENTS.md).
+
+## Dependency updates
+
+Dependabot tracks tool and action releases. HA is pinned to the latest stable
+release verified by this project; do not add older-version shims. Update the HA
+pin, HACS minimum, README and optional USB/Supervisor dependency pins together.
+Those optional dependencies mirror the corresponding HA integration manifests,
+not necessarily each package's newest release. Keep native frontend serialization
+tests for every setup path and reconfiguration.
 
 ## Reports
 
