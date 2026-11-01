@@ -204,6 +204,16 @@ see [performance tuning](docs/PERFORMANCE.md). MTU-aware packets are **enabled b
 Disable them in Options for conservative 20-byte writes. Existing explicit choices,
 keys, entity IDs, effects and polling settings stay unchanged.
 
+### Optional rapid-command connection reuse
+
+**Options/Configure → Reuse connection briefly** is off by default pending hardware
+validation. It can skip connection/notification/authentication overhead for the
+next command within three seconds by retaining the same live connection. A proxy
+slot stays occupied during that window. Reuse stops after 15 seconds; state reads
+always close the retained connection and start fresh. Errors never trigger blind
+command replay. Disabling the option, unloading or stopping HA closes the lease.
+See [performance tuning](docs/PERFORMANCE.md) and [attended recovery tests](docs/RECOVERY-TEST.md).
+
 ### Credential recovery and diagnostics
 
 An **explicit Bluetooth authentication rejection** opens HA's native
@@ -283,7 +293,7 @@ Node.js is needed for the independent AES comparison test. CI runners include it
 it is **not** a runtime requirement for Home Assistant. All automated tests use
 synthetic credentials and simulated BLE peers; no physical hardware is contacted.
 CI enforces Ruff lint/format, strict mypy, pytest with branch coverage (minimum 80%),
-and Home Assistant hassfest validation. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Home Assistant hassfest and dedicated HACS validation. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentation and support
 
@@ -309,6 +319,6 @@ Use the issue forms for bugs and feature requests, with redacted native diagnost
 
 [Published releases](https://github.com/RenierM26/sonoff_bluetooth/releases) include
 `sonoff_l2_ble.zip` for HACS/manual installation and a `SHA256SUMS` integrity file.
-Main requires pull requests, passing Python CI/HA manifest validation, resolved
+Main requires pull requests, passing Python CI/HA manifest/HACS validation, resolved
 review threads and linear history. Published version tags cannot be rewritten or
 deleted through normal Git operations.

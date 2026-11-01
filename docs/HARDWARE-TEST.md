@@ -95,3 +95,13 @@ The owner requested making it the default; v0.6.1 does so for unset choices whil
 preserving explicit false and an accessible 20-byte fallback. Credential checks
 still use 20-byte writes. These snapshots are not a measured speedup percentage,
 long-run certification, or proof of every firmware/preset. See PERFORMANCE.md.
+
+
+## v0.7.0 session-reuse evidence boundary
+
+The validated MTU-aware policy remains default on. Optional three-second idle /
+15-second-age connection reuse is software-tested only and defaults off. No new
+physical commands, power cycling, proxy interruption or live HA configuration
+changes were performed to implement it. The new lifecycle/recovery regressions
+are synthetic evidence; use RECOVERY-TEST.md for attended validation before any
+claim of warm-session compatibility or additional physical speedup.

@@ -112,3 +112,18 @@ and fresh polling reads, with owner-reported improved responsiveness. Since
 v0.6.1 MTU-aware writes default on for unset choices; explicit false remains the
 conservative fallback. Setup/credential validation stays at 20 bytes. Adapter
 caps, ACK gates and cleanup are unchanged. See HARDWARE-TEST.md for scope.
+
+
+## v0.7.0 owned-session and CI follow-up
+
+Dedicated HACS integration validation now runs with Python/hassfest and all three
+contexts are required by main's ruleset. Only HA brands-index registration is
+exempt for this custom repository. No default HACS catalog acceptance is claimed.
+
+Optional reuse owns the same still-connected client, not a disconnected client
+reused for a new connection. It defaults off. An entry-managed idle task takes
+the transport lock for cleanup; explicit unload/stop closes the lease, cancels
+active work and joins owned tasks. Fresh read/query/auth always close the lease
+before a new connection. Every command still needs a unique matching ACK, and
+uncertain commands are never replayed. Diagnostic schema4 exposes only safe
+flags/categories/numbers. Physical recovery/latency evidence remains pending.

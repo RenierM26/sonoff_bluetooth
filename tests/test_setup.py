@@ -20,15 +20,17 @@ DATA = {
 
 async def test_setup_and_unload_forward_native_platforms():
     hass = SimpleNamespace(
+        bus=Mock(),
         config_entries=SimpleNamespace(
             async_forward_entry_setups=AsyncMock(),
             async_unload_platforms=AsyncMock(return_value=True),
-        )
+        ),
     )
     entry = Mock(data=DATA, options={}, title="Strip")
-    coordinator = Mock(async_refresh=AsyncMock())
+    transport = Mock(async_close=AsyncMock())
+    coordinator = Mock(async_refresh=AsyncMock(), transport=transport)
     with (
-        patch("custom_components.sonoff_l2_ble.make_transport", return_value="transport"),
+        patch("custom_components.sonoff_l2_ble.make_transport", return_value=transport),
         patch(
             "custom_components.sonoff_l2_ble.coordinator.L2Coordinator", return_value=coordinator
         ),

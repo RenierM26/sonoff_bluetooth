@@ -12,13 +12,14 @@ from .const import (
     CONF_DEVICE_APIKEY,
     CONF_DEVICE_ID,
     CONF_MTU_WRITES,
+    CONF_REUSE_CONNECTION,
     DEFAULT_MTU_WRITES,
 )
 from .protocol import ProtocolError
 from .transport import GattClient, L2Transport
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
+    from homeassistant.core import Event, HomeAssistant
 
     from .coordinator import L2Coordinator
 
@@ -26,7 +27,11 @@ type L2ConfigEntry = ConfigEntry[L2Coordinator]
 
 
 def make_transport(
-    hass: HomeAssistant, data: Mapping[str, Any], *, mtu_writes: bool = DEFAULT_MTU_WRITES
+    hass: HomeAssistant,
+    data: Mapping[str, Any],
+    *,
+    mtu_writes: bool = DEFAULT_MTU_WRITES,
+    reuse_connection: bool = False,
 ) -> L2Transport:
     """Use HA's adapters, including existing active ESPHome Bluetooth proxies."""
     from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
@@ -62,24 +67,32 @@ def make_transport(
         data[CONF_DEVICE_APIKEY],
         data[CONF_ACCOUNT_APIKEY],
         mtu_writes=mtu_writes,
+        reuse_connection=reuse_connection,
     )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
     """Set up a UI-configured light without changing its physical state."""
-    from homeassistant.const import Platform
+    from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 
     from .coordinator import L2Coordinator
 
-    entry.runtime_data = L2Coordinator(
+    transport = make_transport(
         hass,
-        entry,
-        make_transport(
-            hass,
-            entry.data,
-            mtu_writes=bool(entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
-        ),
+        entry.data,
+        mtu_writes=bool(entry.options.get(CONF_MTU_WRITES, DEFAULT_MTU_WRITES)),
+        reuse_connection=bool(entry.options.get(CONF_REUSE_CONNECTION, False)),
     )
+    transport.create_task = lambda coroutine: entry.async_create_background_task(
+        hass, coroutine, "SONOFF Bluetooth idle lease", eager_start=False
+    )
+    entry.runtime_data = L2Coordinator(hass, entry, transport)
+
+    async def stop(event: Event) -> None:
+        await transport.async_close()
+
+    entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop))
+    entry.async_on_unload(transport.async_close)
     entry.runtime_data.async_track_presence()
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     # Best effort: an offline strip must not prevent adding its retry button/light.
@@ -91,12 +104,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
-    """Unload the platform; the transport holds no persistent connection."""
+    """Unload platforms, then close any opt-in idle lease and join owned tasks."""
     from homeassistant.const import Platform
 
-    return await hass.config_entries.async_unload_platforms(
+    unloaded = await hass.config_entries.async_unload_platforms(
         entry, [Platform.LIGHT, Platform.BUTTON, Platform.NUMBER]
     )
+    if unloaded:
+        await entry.runtime_data.transport.async_close()
+    return unloaded
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> None:

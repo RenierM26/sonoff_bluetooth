@@ -94,11 +94,12 @@
     "step": {
       "init": {
         "title": "Local Bluetooth options",
-        "description": "Effects and controller-rhythm controls are enabled by default. State is refreshed at startup and every 60 seconds by default. Set polling to 0 to disable it, or use 30-3600 seconds. Each refresh briefly uses a local Bluetooth connection. Rhythm responds to sound at the controller; no phone or Home Assistant audio feed is needed. Larger Bluetooth packets are enabled by default, within adapter limits. Disable them to use conservative 20-byte writes if control becomes unreliable. Explicitly saved choices are preserved.",
+        "description": "Effects and controller-rhythm controls are enabled by default. State is refreshed at startup and every 60 seconds by default. Set polling to 0 to disable it, or use 30-3600 seconds. Each refresh briefly uses a local Bluetooth connection. Rhythm responds to sound at the controller; no phone or Home Assistant audio feed is needed. Larger Bluetooth packets are enabled by default, within adapter limits. Disable them to use conservative 20-byte writes if control becomes unreliable. Explicitly saved choices are preserved. Optional connection reuse keeps a proxy slot for up to 3 seconds between commands. It is not yet hardware-validated; disable it if control becomes unreliable.",
         "data": {
           "experimental_effects": "Enable effect and controller-rhythm controls",
           "poll_interval": "State polling interval (seconds; 0 disables)",
-          "mtu_writes": "Use larger Bluetooth packets"
+          "mtu_writes": "Use larger Bluetooth packets",
+          "reuse_connection": "Reuse connection briefly (hardware test; default off)"
         }
       }
     },

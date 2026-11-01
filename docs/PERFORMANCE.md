@@ -4,9 +4,9 @@
 
 - HA publishes the requested (assumed) state as soon as the matching successful
   device ACK is validated, rather than waiting for disconnect to finish.
-- The action itself and subsequent device operations still wait for bounded
-  cleanup. Both locks remain held during cleanup, so no overlapping sessions,
-  permanent connections or untracked background tasks are introduced.
+- Default actions still wait for bounded cleanup with both locks held. The optional
+  reuse mode below retains an owned live connection instead; its idle cleanup is
+  entry-managed and serialized with operations, never an untracked task.
 - Native diagnostics record relative timings, byte counts and GATT write-call
   counts for the latest authentication/read/update/query session. No payload,
   address, name, credential, wall-clock timestamp or exception text is added.
@@ -41,6 +41,7 @@ physical light output. The 60-second polling default is unchanged.
 | `total_ms` | Entire session, including its lock wait and cleanup. |
 | `write_calls` / `bytes_written` | Attempted GATT write calls / bytes whose write call completed, not device acceptance. |
 | `chunk_size` | Selected write limit: up to 244, or 20 with conservative/unknown limits. |
+| `reused_connection` / `retained_connection` | Whether this command skipped connection/authentication and whether it handed ownership to the idle lease. |
 | `outcome` / `disconnect_outcome` | Separate safe categories, so successful ACKs and cleanup failures are distinguishable. |
 
 Unreached stages are `null`; partial/in-flight snapshots are valid. Each operation
@@ -92,7 +93,50 @@ They support the owner's requested v0.6.1 default for L2, not universal firmware
 long-run or exhaustive preset compatibility. No HA settings or hardware were
 changed during the log/diagnostics review or this default-change implementation.
 
-Short-lived session reuse and control-priority scheduling are not implemented.
-Connection setup is the largest measured command stage; any future reuse needs
-its own proxy-slot, timeout, reconnect, unload and fresh-read validation. HACS CI
-validation is the next repository maintenance gap; hassfest already runs.
+## Optional bounded connection reuse — v0.7.0
+
+Enable **Reuse connection briefly (hardware test; default off)** in Options to
+try warm successive commands. The first update connects/authenticates normally.
+After its matching ACK, HA owns that same live connection for up to three idle
+seconds. A following control can skip connection, notification setup and auth.
+The client is never reused after disconnect: the next connection uses a fresh
+client through HA's connection helper. Reuse is not yet hardware-validated.
+
+- Only successfully acknowledged controls may retain a session. No warm connection
+  is opened speculatively, and no request is automatically resent on failure.
+- Idle timeout is three seconds. The reuse deadline is 15 seconds after first
+  retention and is not extended by later commands. After it passes, no new reuse
+  starts. An already-running command keeps its normal bounded deadline/cleanup
+  rather than being interrupted midway just to release a proxy slot.
+- The proxy's BLE slot remains occupied during idle time. Other BLE clients may
+  have to wait; disable reuse if this affects your proxies or phone control.
+- All fresh state reads, queries and credential validation close any retained
+  session before making a new connection. Old command-session notifications are
+  never promoted to fresh reported state.
+- A live disconnected/expired session is discarded before writing. A write, auth,
+  protocol or ACK failure closes it and fails that action without automatic replay;
+  the next separate action connects afresh. Rapid commands use strictly increasing
+  numeric sequences even within a single clock millisecond.
+- Idle cleanup uses a native config-entry background task and the transport lock.
+  The integration explicitly closes/join tasks on unload and HA stop; native task
+  cancellation is also handled. No permanent connection or unowned cleanup task.
+
+With reuse enabled, action completion/`total_ms` may precede disconnect because
+the slot is intentionally retained. `reused_connection` and `retained_connection`
+identify warm/held operations; connect/notify/auth timings are null when skipped.
+`disconnect_outcome: deferred` is not a cleanup success; latest idle/forced cleanup
+is separately recorded in `transport_timings.lease_cleanup`. Runtime
+`connection_retained` says whether the transport currently owns an idle connection.
+
+For an attended comparison, start with reuse off and normal larger packets on.
+Record an action's diagnostics and visible output. Enable reuse, perform two
+normal actions less than three seconds apart, and inspect the second action:
+it should show warm reuse and no new authentication. Check idle release and
+Refresh state, then restore the original light state. Disable reuse if commands
+or recovery are unreliable. See [recovery test plan](RECOVERY-TEST.md).
+
+Synthetic peers cover lifecycle races, cancelled cleanup, expiry, fresh readback,
+dropped links, stale/negative ACKs and no replay. They do not establish real-device
+warm-session compatibility or a physical latency reduction. No live device changes
+were made while implementing this option. HACS CI now runs with Python/hassfest;
+only its external brands-index registration check is exempt for this custom repo.

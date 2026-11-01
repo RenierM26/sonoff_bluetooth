@@ -56,7 +56,7 @@ Use [private vulnerability reporting](SECURITY.md) for security problems.
 ## Releases (maintainer)
 
 1. Prepare a PR with the manifest version, `CHANGELOG.md` and relevant docs updated.
-2. Merge only after both required checks pass. Use the green main commit for release.
+2. Merge only after all three required checks pass. Use the green main commit for release.
 3. Create an annotated `vX.Y.Z` tag matching the manifest, then push it:
    `git tag -a vX.Y.Z <commit> -m "SONOFF Bluetooth vX.Y.Z"` and
    `git push origin vX.Y.Z`.

@@ -8,7 +8,7 @@ sensors, extra services, dependencies, debug-logging switch or YAML are required
 ## Download
 
 1. Update/redownload **SONOFF Bluetooth** and restart HA so Python loads the new
-   diagnostics module. Current code version: **0.6.1**.
+   diagnostics module. Current code version: **0.7.0**.
 2. Open **Settings → Devices & services → SONOFF Bluetooth**.
 3. Open the entry's **⋮ → Download diagnostics**, or open its device and use
    **Download diagnostics** there.
@@ -16,18 +16,19 @@ sensors, extra services, dependencies, debug-logging switch or YAML are required
    the JSON. Downloading itself never retries or changes the strip.
 
 HA supplies the standard system/version/manifest envelope and filename. This
-integration's section is under `data`, with `diagnostics_schema: 3`.
+integration's section is under `data`, with `diagnostics_schema: 4`.
 
 ## Exported information
 
 | Section | Contents |
 | --- | --- |
-| `options` | Effect-controls flag, configured poll interval and MTU-aware writes flag. No extra options are copied. |
+| `options` | Effect-controls flag, configured poll interval and MTU-aware writes and connection-reuse flags. No extra options are copied. |
 | `bluetooth` | Backend readiness, scanner counts, cached visibility/connectability, signal strength (dBm), count of connectable paths and their anonymous signal values. |
 | Identity / service checks | Boolean exact `ck_<deviceid>` match and whether the control service UUID appears in the cached advertisement. Neither the name/ID nor service/manufacturer payload is exported. A missing advertised UUID is not proof that GATT lacks the service. |
 | `runtime` | Reachability, availability, explicit-auth rejection flag, polling enabled and whether a local operation currently holds the lock. |
 | State source | `unknown`, `reported` or `assumed`, plus booleans indicating whether power, mode, brightness and static RGB fields are known. No actual household power/colour/mode values are included. |
 | Latest operation outcomes | Independent read and control outcomes. A successful control ACK may set coordinator update success true, but it does **not** change a failed read into successful readback. |
+| Connection lease | Current in-memory retained-connection flag; per-operation booleans identify warm reuse and retention. `disconnect_outcome: deferred` means cleanup belongs to the idle lease; its latest cleanup appears separately under `lease_cleanup`. No client/task objects are exported. |
 | Session performance | Latest per-operation relative durations, selected chunk size and write/byte counts. Coordinator queue waits are separate; see [performance tuning](PERFORMANCE.md). Only safe numeric fields/categories are exported. |
 | Error category | An allowlisted exception type/category only, never its message/traceback. Unknown types become `OtherError`. |
 
@@ -57,6 +58,10 @@ config-entry dump, BLE/Wi-Fi MAC, eWeLink device ID, friendly/room/proxy name, h
 raw state/advertisement/manufacturer data or exception message is included in the
 integration payload. Additional unknown options/source-object fields are ignored.
 Device-registry details are never copied. HA's own wrapper/filename is managed by HA.
+
+Warm updates have `null` connect/notify/auth stages because those steps were
+skipped, not measured as zero. Their `total_ms` ends after ACK/retention, excluding
+the idle holding period. Read sessions are always fresh and still include cleanup.
 
 Only already-cached HA Bluetooth API lookups and in-memory coordinator flags are
 read. Downloads do not start a scan, open Bluetooth/cloud connections, authenticate,
