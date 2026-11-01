@@ -47,3 +47,11 @@
   or wait for an operation lock. Whitelist scalar flags/counts/RSSI; no raw source
   objects, identifiers, proxy names/hosts or exception text. Keep read/control
   outcomes separate from coordinator update success (an ACK is not a state read).
+
+
+- Repository governance: main requires a PR, both GitHub Actions status checks,
+  an up-to-date branch, resolved threads and linear history. Use a feature branch
+  and squash merge; no direct main pushes or protection bypass. Approvals are
+  optional for the single-maintainer workflow. Version tags are immutable through
+  normal Git operations. Release only a green manifest-matching vX.Y.Z tag;
+  verify release workflow, component ZIP and SHA256SUMS. See CONTRIBUTING.md.

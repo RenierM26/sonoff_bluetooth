@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation and troubleshooting
+    url: https://github.com/RenierM26/sonoff_bluetooth#readme
+    about: Check setup instructions, supported hardware and diagnostics first.
+  - name: Report a security vulnerability privately
+    url: https://github.com/RenierM26/sonoff_bluetooth/security/advisories/new
+    about: Keep security reports and credentials out of public issues.

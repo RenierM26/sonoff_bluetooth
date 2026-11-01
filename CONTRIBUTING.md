@@ -1,40 +1,69 @@
 # Contributing
 
-Use Python 3.14 with HA 2026.10.4 (latest stable checked 2026-11-01). Only the
-latest stable HA release is supported; do not add older-version shims. Follow the README
-for the uv environment and local check commands. Optional pre-commit hooks run
-Ruff and JSON/YAML/whitespace checks; install pre-commit separately if desired.
+## Scope and evidence
 
-Before a PR, run Ruff lint and format checks, strict mypy, and pytest with coverage.
-CI repeats those checks on the current supported HA and validates metadata using hassfest.
-Tests must use synthetic credentials, and must not scan/connect to actual hardware.
+Currently supported: SONOFF L2/UIID 137 with original firmware, using Home
+Assistant's Bluetooth adapters or active ESPHome proxies. Other SONOFF models
+need their own protocol and hardware evidence; see [hardware validation](docs/HARDWARE-TEST.md).
+Do not upload vendor APKs/decompiled code, credentials, config/cache exports,
+device identifiers or unredacted diagnostics. Tests use synthetic credentials.
 
-Preserve authenticated framing, bounded waits, serialized per-device commands,
-matching ACK correlation, cleanup on cancellation, and unknown/assumed entity state
-unless real readback is implemented and tested. A query ACK without params is not
-current state. Do not add a private scanner or compete with HA's proxy connection.
+## Development
 
-Add tests for new behaviour and failure paths, especially configuration flow and
-credential handling. Include reproduction steps and distinguish source-derived,
-simulated, device-reported and visually confirmed findings. New model support needs
-an exact model/UIID binding and physical evidence, not generic UUID guesses.
+Target the latest supported stable Home Assistant and Python 3.14; the exact
+supported version and dependency pins live in `requirements-dev.txt` and `hacs.json`.
 
-The repository retains Apache-2.0 licensing. Do not submit APKs, decompiled app
-source, authentication tokens, keys, private device addresses or household backups.
+```sh
+uv venv --python 3.14
+uv pip install -r requirements-dev.txt
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/mypy
+.venv/bin/pytest --cov
+```
+
+Optional pre-commit hooks run Ruff and JSON/YAML/whitespace checks; install
+pre-commit separately if desired. Preserve Apache-2.0 licensing. Tests must never
+scan/connect to real hardware automatically.
+
+Use a feature branch and pull request. Both Python CI and Home Assistant manifest
+validation must pass against current main, and review threads must be resolved.
+Squash merging keeps main linear; merged branches are deleted automatically.
+Reviewer approvals are optional for this single-maintainer project, not a way to
+skip CI. Do not push directly to main or rewrite published version tags.
+
+Preserve entity unique IDs and explicit saved options. Keep HA in charge of
+Bluetooth scanning, serialize device operations and never equate ACKs with fresh
+state or visible output. Setup validation must not change the light. Changes to
+device behaviour need meaningful synthetic tests and separately documented
+attended hardware evidence. See [repository instructions](AGENTS.md).
 
 ## Dependency updates
 
 Dependabot tracks tool and action releases. HA is pinned to the latest stable
-release verified by this project. When a new stable HA is available, update its
-pin, HACS minimum, README, and optional USB/Supervisor dependency pins together.
+release verified by this project; do not add older-version shims. Update the HA
+pin, HACS minimum, README and optional USB/Supervisor dependency pins together.
 Those optional dependencies mirror the corresponding HA integration manifests,
 not necessarily each package's newest release. Keep native frontend serialization
-tests for every setup path and reconfiguration. No older-version matrix is needed.
+tests for every setup path and reconfiguration.
 
-## Releases
+## Reports
 
-Update `custom_components/sonoff_l2_ble/manifest.json` and CHANGELOG.md together.
-After the checks pass, a maintainer can push a matching `v<version>` tag. The release
-workflow reruns validation, checks the manifest/tag match, builds a component-only
-ZIP and publishes it as a GitHub Release asset. This initial repository bootstrap
-does not itself create or publish a release tag.
+Use the issue forms for bugs or feature requests. For bugs, include exact versions,
+controller/proxy details, reproduction steps and redacted native HA diagnostics.
+Use [private vulnerability reporting](SECURITY.md) for security problems.
+
+## Releases (maintainer)
+
+1. Prepare a PR with the manifest version, `CHANGELOG.md` and relevant docs updated.
+2. Merge only after both required checks pass. Use the green main commit for release.
+3. Create an annotated `vX.Y.Z` tag matching the manifest, then push it:
+   `git tag -a vX.Y.Z <commit> -m "SONOFF Bluetooth vX.Y.Z"` and
+   `git push origin vX.Y.Z`.
+4. The Package release workflow repeats CI, checks tag/version consistency and
+   publishes `sonoff_l2_ble.zip` plus `SHA256SUMS`. Verify the workflow, release
+   assets and notes before announcing the release.
+
+Published version tags are protected against rewriting/deletion. Fix mistakes
+with a new version rather than moving tags. HACS uses the release ZIP; its files
+are at the archive root for extraction into `custom_components/sonoff_l2_ble/`.

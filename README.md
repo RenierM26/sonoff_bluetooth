@@ -290,3 +290,16 @@ and Home Assistant hassfest validation. See [CONTRIBUTING.md](CONTRIBUTING.md).
 No APKs, decompiled vendor code, real device identifiers or credentials are
 redistributed. This is an independent community project, not an official SONOFF
 or eWeLink product. Licensed under [Apache-2.0](LICENSE).
+
+
+## Contributing, security and releases
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development, pull requests and the
+maintainer release process. Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
+Use the issue forms for bugs and feature requests, with redacted native diagnostics.
+
+[Published releases](https://github.com/RenierM26/sonoff_bluetooth/releases) include
+`sonoff_l2_ble.zip` for HACS/manual installation and a `SHA256SUMS` integrity file.
+Main requires pull requests, passing Python CI/HA manifest validation, resolved
+review threads and linear history. Published version tags cannot be rewritten or
+deleted through normal Git operations.

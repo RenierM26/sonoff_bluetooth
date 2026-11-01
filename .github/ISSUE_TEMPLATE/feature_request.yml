@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a local Bluetooth feature or integration improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behaviour and alternatives
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Controller model and firmware (if relevant)
+      description: L2/UIID 137 is currently supported; other models need separate evidence.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Available evidence
+      description: Link public documentation or describe hardware observations. Do not upload credentials, APKs or decompiled vendor code.

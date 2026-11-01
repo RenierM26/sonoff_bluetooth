@@ -3,11 +3,13 @@ on:
   push:
     tags: ['v*']
 permissions:
-  contents: write
+  contents: read
 jobs:
   validate:
     uses: ./.github/workflows/ci.yml
   package:
+    permissions:
+      contents: write
     needs: validate
     runs-on: ubuntu-latest
     steps:
@@ -17,17 +19,32 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           python - <<'PY'
-          import json, os, pathlib, zipfile
+          import hashlib, json, os, pathlib, re, zipfile
           component = pathlib.Path('custom_components/sonoff_l2_ble')
           version = json.loads((component / 'manifest.json').read_text())['version']
           assert os.environ['RELEASE_TAG'] == f'v{version}', 'Tag must match manifest version'
           with zipfile.ZipFile('sonoff_l2_ble.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
               for path in sorted(component.rglob('*')):
-                  if path.is_file() and '__pycache__' not in path.parts:
+                  if path.is_file() and path.suffix in {'.py', '.json'}:
                       archive.write(path, path.relative_to(component))
+          package = pathlib.Path('sonoff_l2_ble.zip')
+          pathlib.Path('SHA256SUMS').write_text(
+              f'{hashlib.sha256(package.read_bytes()).hexdigest()}  {package.name}\n'
+          )
+          changelog = pathlib.Path('CHANGELOG.md').read_text()
+          section = re.search(
+              rf'^## {re.escape(version)}(?:[ \t][^\n]*)?\n(.*?)(?=^## |\Z)',
+              changelog, re.MULTILINE | re.DOTALL,
+          )
+          assert section, 'Version must have a changelog entry'
+          notes = section.group(1).strip()
+          notes += '\n\nInstall or update through HACS, then restart Home Assistant. '
+          notes += 'For manual installation, extract `sonoff_l2_ble.zip` into '
+          notes += '`custom_components/sonoff_l2_ble/`. See the README for setup and supported hardware.\n'
+          pathlib.Path('release-notes.md').write_text(notes)
           PY
       - name: Publish release asset
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release create "$RELEASE_TAG" sonoff_l2_ble.zip --verify-tag --generate-notes
+        run: gh release create "$RELEASE_TAG" sonoff_l2_ble.zip SHA256SUMS --verify-tag --title "SONOFF Bluetooth $RELEASE_TAG" --notes-file release-notes.md
