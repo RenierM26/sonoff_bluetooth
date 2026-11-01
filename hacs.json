@@ -1,5 +1,7 @@
 {
   "name": "SONOFF Bluetooth",
   "homeassistant": "2026.10.4",
-  "render_readme": true
+  "render_readme": true,
+  "zip_release": true,
+  "filename": "sonoff_l2_ble.zip"
 }

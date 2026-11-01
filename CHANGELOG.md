@@ -2,6 +2,9 @@
 
 ## 0.5.0 — Standard effects and 60-second polling
 
+- Repository maintenance: contributor/security/issue templates, HACS release ZIP
+  and SHA256 checksums, version-specific release notes and protected main/tags.
+
 - Promote effects/rhythm controls to standard features after owner live-HA testing
   of effect selection, rhythm, speed, sound reaction and 60-second state polling.
 - Remove experimental UI/entity/error labels. Effects/rhythm default enabled;

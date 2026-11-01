@@ -1,5 +1,6 @@
 name: Bug report
 description: Report a reproducible L2 Bluetooth integration problem.
+labels: [bug]
 body:
   - type: input
     id: versions
@@ -27,8 +28,8 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Relevant redacted logs
-      description: Never include keys, tokens, full config entries, private MAC addresses or cache exports.
+      label: Native diagnostics and relevant redacted logs
+      description: Download diagnostics from the integration or device menu; review the file before attaching. Never include keys, tokens, full config entries, private MAC addresses or cache exports.
   - type: checkboxes
     id: privacy
     attributes:

@@ -1,25 +1,27 @@
-# Security
+# Security policy
 
-Do not post eWeLink apikeys, LAN devicekeys, account credentials, access tokens,
-HA config-entry exports or unredacted diagnostics in public issues or pull requests.
-The export helper writes a new owner-only file; never commit that file. HA stores
-integration credentials in its config entry; masked UI does not encrypt storage.
+## Supported versions
 
-For a vulnerability, use GitHub's private vulnerability reporting when available
-on this repository, rather than a public issue containing sensitive details.
-For an accidentally exposed credential, remove the public copy and invalidate or
-rotate the affected credential through the relevant vendor/account service.
+Security fixes target the latest published release and the Home Assistant version
+currently supported by this project. Update older releases before reporting.
 
-The device protocol requires legacy MD5 key derivation and a fixed-IV AES-CBC
-scheme. This integration reproduces that protocol for compatibility; it does not
-claim to improve the vendor's cryptographic design. Runtime control is local, but
-Bluetooth proximity alone should not be treated as an authorization boundary.
+## Report privately
 
-Token import uses a region-prefixed SonoffLAN token only to read profile/device
-metadata over fixed eWeLink HTTPS hosts, with redirects disabled. The token is
-not saved. It has account access: do not paste it into issues, screenshots or logs.
-Only the selected strip's device/account apikeys are retained in the HA entry.
-SonoffLAN import reads its in-memory device registry without reading its saved
-password, editing its storage or opening another cloud session. Imported keys are
-never sent back as form values. SonoffLAN itself may still use cloud access;
-this integration's normal BLE control does not.
+Use [GitHub private vulnerability reporting](https://github.com/RenierM26/sonoff_bluetooth/security/advisories/new).
+Do not open public issues containing keys, tokens, device/account identifiers,
+private network details, full config entries, APKs or decompiled vendor code.
+Include the affected version, impact and minimal redacted reproduction steps.
+Response timing is best-effort; this is a community-maintained project.
+
+## Credentials and device protocol
+
+Device/account keys are stored in HA's config-entry storage and masked in forms;
+that storage is not an encrypted secrets vault. Keep HA backups private. Cloud
+setup tokens are used only during explicitly selected import, not retained for
+runtime operation. Native diagnostics use an explicit safe-field allowlist, but
+check any attached file and HA-managed envelope before sharing it publicly.
+
+The original controller requires legacy MD5-derived AES-CBC with a fixed IV.
+This implementation preserves wire compatibility; it does not upgrade the
+controller's cryptography. Only use credentials for devices you own or manage.
+Runtime control is local Bluetooth; keep Home Assistant and proxies updated.
