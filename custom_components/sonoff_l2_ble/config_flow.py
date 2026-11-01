@@ -19,8 +19,10 @@ from .const import (
     CONF_ACCOUNT_APIKEY,
     CONF_DEVICE_APIKEY,
     CONF_DEVICE_ID,
-    CONF_EXPERIMENTAL,
+    CONF_EFFECTS_ENABLED,
     CONF_POLL_INTERVAL,
+    DEFAULT_EFFECTS_ENABLED,
+    DEFAULT_POLL_INTERVAL,
     DOMAIN,
 )
 from .discovery import (
@@ -276,12 +278,12 @@ class L2ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class L2OptionsFlow(config_entries.OptionsFlow):
-    """Local-only experimental controls and optional conservative state polling."""
+    """Local-only effect controls and optional conservative state polling."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            interval = user_input.get(CONF_POLL_INTERVAL, 0)
+            interval = user_input.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
             if (
                 type(interval) not in (int, float)
                 or not math.isfinite(interval)
@@ -293,7 +295,9 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                 return self.async_create_entry(
                     title="",
                     data={
-                        CONF_EXPERIMENTAL: bool(user_input.get(CONF_EXPERIMENTAL, False)),
+                        CONF_EFFECTS_ENABLED: bool(
+                            user_input.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
+                        ),
                         CONF_POLL_INTERVAL: int(interval),
                     },
                 )
@@ -302,12 +306,16 @@ class L2OptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_EXPERIMENTAL,
-                        default=self.config_entry.options.get(CONF_EXPERIMENTAL, False),
+                        CONF_EFFECTS_ENABLED,
+                        default=self.config_entry.options.get(
+                            CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED
+                        ),
                     ): bool,
                     vol.Required(
                         CONF_POLL_INTERVAL,
-                        default=self.config_entry.options.get(CONF_POLL_INTERVAL, 0),
+                        default=self.config_entry.options.get(
+                            CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
+                        ),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
                             min=0, max=3600, step=30, mode=selector.NumberSelectorMode.BOX

@@ -98,12 +98,12 @@ def turn_on_params(
     level: int | None = None,
     rgb: tuple[int, int, int] | None = None,
     effect: str | None = None,
-    experimental: bool = False,
+    effects_enabled: bool = True,
 ) -> dict[str, Any]:
     """Static colours exit an effect; brightness alone never silently cancels one."""
     static = effect in (STATIC_EFFECT, EFFECT_OFF)
-    if effect is not None and not static and not experimental:
-        raise ValueError("Enable experimental effects in integration options first")
+    if effect is not None and not static and not effects_enabled:
+        raise ValueError("Enable effects in integration options first")
     if effect is not None and not static and rgb is not None:
         raise ValueError("Choose an effect or an RGB colour, not both")
     if effect is not None and effect not in (STATIC_EFFECT, EFFECT_OFF, *EFFECTS, *RHYTHMS):
@@ -116,9 +116,9 @@ def turn_on_params(
     elif static or rgb is not None:
         mode = 0
     if mode in EFFECTS.values():
-        if not experimental:
+        if not effects_enabled:
             if level is not None:
-                raise ValueError("Enable experimental controls or select an RGB colour")
+                raise ValueError("Enable effect controls or select an RGB colour")
             return {"switch": "on"}
         params: dict[str, Any] = {"switch": "on", "mode": mode}
         if effect is not None:

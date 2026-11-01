@@ -1,6 +1,6 @@
 """L2 BLE codec reconstructed from eWeLink 5.29.1, modules 2190-94/4826.
 
-Experimental: auth/control and subsequent state tested on one physical L2.
+Auth/control and subsequent state tested on one physical L2.
 """
 
 from __future__ import annotations

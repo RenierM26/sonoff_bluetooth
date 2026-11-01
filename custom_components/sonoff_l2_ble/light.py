@@ -26,14 +26,14 @@ class L2Light(L2Entity, LightEntity):
     def __init__(self, entry: L2ConfigEntry) -> None:
         super().__init__(entry)
         self._attr_supported_color_modes = {ColorMode.RGB}
-        if self.coordinator.experimental:
+        if self.coordinator.effects_enabled:
             self._attr_supported_features = LightEntityFeature.EFFECT
             self._attr_effect_list = [EFFECT_OFF, *EFFECTS, *RHYTHMS]
 
     @property
     def color_mode(self) -> ColorMode:
         mode = self.coordinator.data.get("mode")
-        if self.coordinator.experimental:
+        if self.coordinator.effects_enabled:
             if mode in EFFECTS.values():
                 return ColorMode.BRIGHTNESS
             if mode == 4 and self.effect:
@@ -64,7 +64,7 @@ class L2Light(L2Entity, LightEntity):
 
     @property
     def effect(self) -> str | None:
-        return effect_name(self.coordinator.data) if self.coordinator.experimental else None
+        return effect_name(self.coordinator.data) if self.coordinator.effects_enabled else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if kwargs.get("brightness") == 0:
@@ -76,7 +76,7 @@ class L2Light(L2Entity, LightEntity):
                 level=kwargs.get("brightness"),
                 rgb=kwargs.get("rgb_color"),
                 effect=kwargs.get("effect"),
-                experimental=self.coordinator.experimental,
+                effects_enabled=self.coordinator.effects_enabled,
             )
         )
 

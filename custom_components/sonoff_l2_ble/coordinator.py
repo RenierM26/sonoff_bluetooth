@@ -18,7 +18,13 @@ from homeassistant.exceptions import (
 )
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_EXPERIMENTAL, CONF_POLL_INTERVAL, DOMAIN
+from .const import (
+    CONF_EFFECTS_ENABLED,
+    CONF_POLL_INTERVAL,
+    DEFAULT_EFFECTS_ENABLED,
+    DEFAULT_POLL_INTERVAL,
+    DOMAIN,
+)
 from .protocol import AuthenticationError, ProtocolError
 
 if TYPE_CHECKING:
@@ -55,7 +61,7 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
     """An actual report replaces stale data; an ACK only makes requested state assumed."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, transport: L2Transport) -> None:
-        interval = int(entry.options.get(CONF_POLL_INTERVAL, 0))
+        interval = int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL))
         super().__init__(
             hass,
             _LOGGER,
@@ -67,7 +73,9 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.reachable: bool | None = None
         self.auth_failed = False
         self.transport = transport
-        self.experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
+        self.effects_enabled = bool(
+            entry.options.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
+        )
         self.reported = False
         self.last_read_outcome: ReadOutcome = "not_attempted"
         self.last_control_outcome: ControlOutcome = "not_attempted"
@@ -152,7 +160,7 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
             except ValueError:
                 self.last_control_outcome = "invalid_request"
                 raise ServiceValidationError(
-                    "Invalid L2 colour/effect combination; check mode and experimental options",
+                    "Invalid L2 colour/effect combination; check mode and effect options",
                     translation_domain=DOMAIN,
                     translation_key="invalid_control",
                 ) from None

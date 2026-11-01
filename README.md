@@ -5,15 +5,16 @@
 
 Local Bluetooth control of a **SONOFF L2 LED strip (UIID 137)** with its original
 firmware. Provides a native Home Assistant RGB light with **on/off, colour and brightness**,
-a **refresh button**, and opt-in experimental effects/rhythm controls.
+a **refresh button**, preset effects, controller rhythm and speed/sensitivity controls.
 Currently supports L2 only; the repository name does **not** imply compatibility
 with every SONOFF Bluetooth product. L2 Lite, L1 and L3 have not been verified.
 
 The protocol has been tested on a physical L2 through an ESPHome Sonoff M5 proxy:
 authentication, on/off, red/30%, blue/60%, and restoration all passed. Subsequent
 Bluetooth state reports matched, and the owner confirmed the visible output.
-The integration is still **experimental**; full live-HA installation, long-run,
-power-cycle and Internet-blocked testing are separate remaining checks.
+The owner also tested the installed HA integration: effects, rhythm, speed,
+sound reaction and 60-second state polling work on this L2. Long-run, power-cycle
+and Internet-blocked testing remain separate checks.
 
 ## How it works
 
@@ -186,7 +187,8 @@ A lost ACK can still mean a command was applied, so light commands are not blind
 replayed. Refresh to check the resulting state.
 
 Optional polling is available in the integration's **Options/Configure** dialog:
-**0** (default) disables it; **30-3600 seconds** enables it (60+ recommended).
+**60 seconds** is the default; **0** disables it, and **30-3600 seconds** is supported.
+Existing explicitly saved intervals, including 0, are preserved on upgrade.
 This is periodic refresh, not continuous push synchronisation. Each operation
 releases its BLE/proxy slot; no competing scanner or permanent BLE connection is
 created. Local control needs only HA, its Bluetooth adapter/proxy and the L2—not
@@ -211,20 +213,21 @@ connection, refresh or light command. Credentials/tokens, identifiers, proxy nam
 hosts, raw advertisements/state and error messages are omitted. HA adds its usual
 system/integration version envelope.
 
-### Experimental native effects and rhythm
+### Native effects and rhythm
 
-In the same options dialog, enable **experimental effect and controller-rhythm
-controls**. This is **off by default**: their payloads are traced from the exact
-L2/UIID137 app path but have not yet been physically validated.
+Effects and controller-rhythm controls are **enabled by default**. You can disable
+them in the options dialog. Existing explicitly saved enable/disable choices are
+preserved on upgrade. Their payloads come from the exact L2/UIID137 app path;
+the owner has tested effects, rhythm, speed and sound reaction in live HA.
 
 - The normal HA light effect picker exposes **21 presets**, **off** (static colour), and four
   controller rhythm presets (Classic, Mild, Dynamic, Disco).
 - Use `light.turn_on` with `effect: Reading`, for example, or include the effect
   in an HA scene/automation. No separate cloud/app control surface is introduced.
-- The native **Effect speed (experimental)** number is available in a preset
+- The native **Effect speed** number is available in a preset
   effect (1-100%). Brightness changes preserve that effect's mode and use its
   per-mode brightness field instead of silently switching back to static RGB.
-- The native **Rhythm sensitivity (experimental)** number is available in rhythm
+- The native **Rhythm sensitivity** number is available in rhythm
   mode (0-100%). Numbers change settings without explicitly powering on an OFF
   strip. Selecting an effect with `light.turn_on` does power it on.
 - Selecting an RGB colour or **off** exits effects/rhythm. RGB and an effect
@@ -234,15 +237,15 @@ L2/UIID137 app path but have not yet been physically validated.
 Rhythm is exposed as **controller configuration through native HA entities**.
 The traced UIID137 rhythm screen sends discrete mode/sensitivity updates; it does
 not establish a phone-audio stream. This implementation never captures audio or
-uses a vendor app/service to feed it. **Whether this controller autonomously reacts
-to sound with the phone closed is still unverified**; no claim of music response
-or HA `media_player` beat synchronisation is made. Keep the opt-in disabled until
-an attended hardware trial if you require validated behaviour only.
+uses a vendor app/service to feed it. The owner confirmed that rhythm reacts to
+sound on the tested L2. There is no HA audio analysis or `media_player` beat
+synchronisation. Exhaustive preset/slider coverage and Internet-blocked operation
+are not claimed from this test.
 
 ## Limitations and troubleshooting
 
-- **Only basic L2/UIID 137 controls are physically verified.** Effects/rhythm are
-  opt-in experiments, not verified device capabilities. Device-resident timers,
+- **L2/UIID 137 only:** basic controls plus owner-tested effects, rhythm, speed,
+  sound reaction and 60-second polling. Device-resident timers,
   transitions, power-on behaviour and factory commissioning are not exposed.
 - **Cannot connect:** confirm the proxy is active/connectable, the strip remains
   powered, and another phone/client is not connected. Improve proximity first.

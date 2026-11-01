@@ -1,4 +1,4 @@
-"""Native experimental effect speed and controller-rhythm sensitivity controls."""
+"""Native effect speed and controller-rhythm sensitivity controls."""
 
 from typing import Any
 
@@ -18,7 +18,7 @@ PARALLEL_UPDATES = 0
 async def async_setup_entry(
     hass: HomeAssistant, entry: L2ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    if entry.runtime_data.experimental:
+    if entry.runtime_data.effects_enabled:
         async_add_entities([L2Parameter(entry, "speed"), L2Parameter(entry, "sensitivity")])
 
 
@@ -40,7 +40,7 @@ class L2Parameter(L2Entity, NumberEntity):
         mode = self.coordinator.data.get("mode")
         return (
             super().available
-            and self.coordinator.experimental
+            and self.coordinator.effects_enabled
             and (mode in EFFECTS.values() if self.key == "speed" else mode == 4)
         )
 
@@ -64,7 +64,7 @@ class L2Parameter(L2Entity, NumberEntity):
             or not float(value).is_integer()
         ):
             raise ServiceValidationError(
-                "Select a compatible experimental effect first; value must be within the integer slider range",
+                "Select a compatible effect first; value must be within the integer slider range",
                 translation_domain=DOMAIN,
                 translation_key="invalid_number",
             )
@@ -73,7 +73,7 @@ class L2Parameter(L2Entity, NumberEntity):
     def _params(self, data: dict[str, Any], value: int) -> dict[str, Any]:
         """Validate mode again inside the shared operation lock."""
         mode = data.get("mode")
-        if not self.coordinator.experimental or (
+        if not self.coordinator.effects_enabled or (
             mode not in EFFECTS.values() if self.key == "speed" else mode != 4
         ):
             raise ValueError("The active L2 mode changed")

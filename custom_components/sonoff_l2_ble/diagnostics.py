@@ -9,7 +9,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from . import L2ConfigEntry
-from .const import CONF_DEVICE_ID, CONF_EXPERIMENTAL, CONF_POLL_INTERVAL, DOMAIN
+from .const import (
+    CONF_DEVICE_ID,
+    CONF_EFFECTS_ENABLED,
+    CONF_POLL_INTERVAL,
+    DEFAULT_EFFECTS_ENABLED,
+    DEFAULT_POLL_INTERVAL,
+    DOMAIN,
+)
 from .protocol import SERVICE
 from .state import EFFECTS, integer
 
@@ -160,8 +167,10 @@ async def async_get_config_entry_diagnostics(
         "diagnostics_schema": 2,
         "integration": DOMAIN,
         "options": {
-            CONF_EXPERIMENTAL: bool(entry.options.get(CONF_EXPERIMENTAL, False)),
-            CONF_POLL_INTERVAL: int(entry.options.get(CONF_POLL_INTERVAL, 0)),
+            CONF_EFFECTS_ENABLED: bool(
+                entry.options.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
+            ),
+            CONF_POLL_INTERVAL: int(entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
         },
         "bluetooth": _bluetooth_snapshot(hass, entry),
         "runtime": runtime,

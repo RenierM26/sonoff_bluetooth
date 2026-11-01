@@ -32,7 +32,7 @@ certification or proof of a live installation / physical effect behaviour.
   The separate optional CLI exporter is not called from HA's runtime/config flow.
 - Async setup forwards platforms; unload removes entities/listeners/coordinator
   scheduling. Native options update reloads the same entry. State polling is optional
-  and off by default. Every connection releases its slot in bounded cleanup.
+  and defaults to 60 seconds since v0.5.0 (0 disables it). Every connection releases its slot in bounded cleanup.
 - Mode-dependent commands are constructed inside the operation lock. Matching
   encrypted ACK required; no blind command replay after a timeout. Unsolicited
   pre-command reports cannot overwrite the requested state. Cancellation propagates
@@ -65,12 +65,14 @@ certification or proof of a live installation / physical effect behaviour.
   reconfiguration remains available for other credential failures.
 - Existing uppercase MAC-based unique IDs are preserved instead of applying a
   cosmetic normalization that would require a registry migration.
-- Exact L2 native effects/rhythm stay **opt-in experimental**. No claim of physical
-  effect output, standalone sound response, Internet-blocked proof, full live-HA
-  acceptance or support for other SONOFF models. See HARDWARE-TEST.md.
-- Tests exercise real HA schemas, state attribute validation and coordinator APIs
-  with simulated boundaries; they do not yet boot the complete integration inside
-  a real HA instance. That acceptance test is the next practical gate.
+- Following the owner's installed-HA trial, L2 effects/rhythm/speed/sound reaction
+  and 60-second polling have owner-reported hardware validation. Since v0.5.0
+  controls default on and polling defaults to 60 seconds. Explicit saved options
+  and existing entity unique IDs are preserved; no registry migration is needed.
+- Unit tests use native HA APIs with simulated boundaries; the separate owner
+  acceptance report is documented in HARDWARE-TEST.md. It does not establish
+  exhaustive preset/sensitivity ranges, all recovery/startup conditions, other
+  SONOFF models/firmware, long-run or Internet-blocked operation.
 - No formal Bronze/Silver/Gold/Platinum tier is asserted; this custom component has
   not undergone Home Assistant core review. The legacy MD5/fixed-IV encryption is
   required by the device wire protocol, not a recommended new cryptosystem.

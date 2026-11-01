@@ -35,14 +35,14 @@ The device apikey passed authentication. The same value in `selfApikey` was
 accepted for this owned device. Account profile retrieval was not used; shared
 devices may require a different account apikey.
 
-Remaining checks: full live-HA custom-integration installation/service calls,
-long-duration reliability, other L2 firmware, shared accounts, power cycling,
+Remaining checks beyond the owner trial below: long-duration reliability,
+other L2 firmware, shared accounts, power cycling,
 and Internet-blocked operation. Simulated peer/unit tests and HA import/config
 flow tests do not replace those hardware checks.
 
-## v0.4.0 evidence boundary
+## Initial v0.4.0 evidence boundary (superseded in part by owner trial below)
 
-Startup/manual/polled fresh-state reads now use the previously observed session
+Startup/manual/polled fresh-state reads initially used the previously observed session
 report path. Their new integration/coordinator implementation has simulated-peer
 and native HA entity tests, not a new installed-HA hardware acceptance trial.
 
@@ -52,3 +52,21 @@ accepted slider ranges, and sound response with the phone/app closed still need
 an attended trial. No new hardware commands were sent while implementing them.
 The runtime code uses only local HA/Bluetooth control, but an Internet-blocked
 trial remains separate evidence that has not yet been obtained.
+
+
+## Owner live-HA validation — 2026-11-01
+
+After installing the integration, the owner reported that effect selection,
+rhythm, speed and 60-second state polling worked perfectly, then separately
+confirmed reaction to sound. This is owner-reported physical/live-HA evidence,
+not an inference from code, ACKs or simulated tests. The exact installed commit,
+all-preset coverage and individual sensitivity/range trials were not specified.
+Phone/app-closed and Internet-blocked conditions were not explicitly reported.
+
+Based on that validation and the owner's request, v0.5.0 removes experimental
+labels, defaults effects/rhythm on and defaults state polling to 60 seconds.
+Explicit saved enable/disable and interval choices (including 0) are preserved.
+The implementation still does not capture/stream audio, use a vendor app at
+runtime, or claim HA media-player beat synchronisation. Other models/firmware,
+long-run/power-cycle/recovery scenarios and blocked-Internet operation remain
+outside this trial's evidence. No hardware was actuated to make the v0.5.0 change.

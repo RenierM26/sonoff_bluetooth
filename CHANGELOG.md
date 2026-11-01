@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — Standard effects and 60-second polling
+
+- Promote effects/rhythm controls to standard features after owner live-HA testing
+  of effect selection, rhythm, speed, sound reaction and 60-second state polling.
+- Remove experimental UI/entity/error labels. Effects/rhythm default enabled;
+  state polling defaults to 60 seconds and remains configurable/disableable.
+- Preserve explicitly saved enable/disable and polling choices, including 0, the
+  legacy stored option key and all entity unique IDs. No forced reconfiguration.
+- Update hardware evidence and test runtime/form/diagnostic default consistency
+  plus upgrade compatibility. No new device commands or live-HA changes.
+
 ## 0.4.2 — Native installation diagnostics
 
 - Expand native config-entry diagnostics and add a native device diagnostics hook.

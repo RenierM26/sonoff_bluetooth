@@ -94,9 +94,9 @@
     "step": {
       "init": {
         "title": "Local Bluetooth options",
-        "description": "State is refreshed once at startup. Poll interval 0 disables automatic polling; otherwise use 30-3600 seconds (60 or more recommended). Each refresh opens and closes a local BLE session. Experimental controls add 21 preset effects, controller rhythm modes, effect speed and rhythm sensitivity using native HA entities. These additional commands are source-derived and NOT yet physically validated; autonomous sound response is not proven. No eWeLink app, cloud control or phone/HA audio capture is used.",
+        "description": "Effects and controller-rhythm controls are enabled by default. State is refreshed at startup and every 60 seconds by default. Set polling to 0 to disable it, or use 30-3600 seconds. Each refresh briefly uses a local Bluetooth connection. Rhythm responds to sound at the controller; no phone or Home Assistant audio feed is needed.",
         "data": {
-          "experimental_effects": "Enable experimental effect and controller-rhythm controls",
+          "experimental_effects": "Enable effect and controller-rhythm controls",
           "poll_interval": "State polling interval (seconds; 0 disables)"
         }
       }
@@ -113,10 +113,10 @@
     },
     "number": {
       "effect_speed": {
-        "name": "Effect speed (experimental)"
+        "name": "Effect speed"
       },
       "rhythm_sensitivity": {
-        "name": "Rhythm sensitivity (experimental)"
+        "name": "Rhythm sensitivity"
       }
     }
   },
@@ -125,7 +125,7 @@
       "message": "The L2 rejected Bluetooth authentication. Update the integration credentials."
     },
     "invalid_control": {
-      "message": "Invalid colour/effect combination. Check the active mode and experimental options."
+      "message": "Invalid colour/effect combination. Check the active mode and effect options."
     },
     "command_failed": {
       "message": "The L2 Bluetooth command failed. Check proximity and credentials, then refresh state."
@@ -134,7 +134,7 @@
       "message": "The L2 did not provide a fresh state report. Check its power, proximity and active Bluetooth proxy."
     },
     "invalid_number": {
-      "message": "Select a compatible experimental effect first, and use an integer within the slider range."
+      "message": "Select a compatible effect first, and use an integer within the slider range."
     }
   }
 }

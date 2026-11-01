@@ -1,4 +1,4 @@
-"""Native HA controls, report freshness, experimental gates and offline behaviour."""
+"""Native HA controls, report freshness, effect options and offline behaviour."""
 
 import asyncio
 from datetime import timedelta
@@ -32,11 +32,11 @@ from custom_components.sonoff_l2_ble.state import (
 DATA = {"address": "AA:BB:CC:DD:EE:FF", "device_id": "1000000000"}
 
 
-def configured(experimental=False, interval=0):
+def configured(effects_enabled=False, interval=0):
     transport = Mock(send_update=AsyncMock(return_value={"error": 0}), read_state=AsyncMock())
     entry = Mock(
         data=DATA,
-        options={"experimental_effects": experimental, "poll_interval": interval},
+        options={"experimental_effects": effects_enabled, "poll_interval": interval},
         title="Synthetic strip",
     )
     coordinator = entry.runtime_data = L2Coordinator(Mock(), entry, transport)
@@ -131,7 +131,7 @@ def test_exact_l2_preset_mapping_and_no_unbound_modes():
     assert brightness({"mode": 4, "bright": 80}) is None
 
 
-async def test_experimental_controls_are_not_exposed_or_sent_by_default():
+async def test_explicitly_disabled_effect_controls_are_not_exposed_or_sent():
     entry, _, transport, light = configured()
     assert not light.supported_features & LightEntityFeature.EFFECT
     assert light.effect is None
@@ -287,14 +287,14 @@ async def test_options_invalid_interval_renders_native_form(interval):
 def test_unknown_modes_and_conflicting_requests_do_not_invent_commands():
     for kwargs in ({"effect": "fake"}, {"effect": "Reading", "rgb": (1, 2, 3)}):
         with pytest.raises(ValueError):
-            turn_on_params({}, experimental=True, **kwargs)
+            turn_on_params({}, effects_enabled=True, **kwargs)
     with pytest.raises(ValueError):
         turn_on_params({"mode": 4}, level=128)
     with pytest.raises(ValueError):
         turn_on_params({"mode": 5}, level=128)
     with pytest.raises(ValueError):
-        turn_on_params({"mode": 7}, level=128)
-    assert turn_on_params({"mode": 7}) == {"switch": "on"}
+        turn_on_params({"mode": 7}, level=128, effects_enabled=False)
+    assert turn_on_params({"mode": 7}, effects_enabled=False) == {"switch": "on"}
     assert turn_on_params({"mode": 1}, level=128)["mode"] == 1
 
 
@@ -394,3 +394,49 @@ async def test_cancelled_control_marks_cached_report_uncertain_and_propagates_ca
         await task
     assert light.is_on is False and light.assumed_state
     assert not coordinator.operation_lock.locked()
+
+
+@pytest.mark.parametrize(
+    "saved,enabled,interval",
+    [
+        ({}, True, 60),
+        ({"experimental_effects": False, "poll_interval": 0}, False, 0),
+        ({"experimental_effects": True, "poll_interval": 120}, True, 120),
+        ({"poll_interval": 0}, True, 0),
+        ({"experimental_effects": False}, False, 60),
+    ],
+)
+async def test_effect_defaults_and_legacy_saved_options_agree_across_runtime_form_and_diagnostics(
+    saved, enabled, interval
+):
+    from custom_components.sonoff_l2_ble.diagnostics import async_get_config_entry_diagnostics
+
+    entry = Mock(data=DATA, options=saved, title="Synthetic strip")
+    transport = Mock(send_update=AsyncMock(), read_state=AsyncMock())
+    coordinator = entry.runtime_data = L2Coordinator(Mock(), entry, transport)
+    light = L2Light(entry)
+    assert coordinator.effects_enabled is enabled
+    assert coordinator.update_interval == (timedelta(seconds=interval) if interval else None)
+    assert bool(light.supported_features & LightEntityFeature.EFFECT) is enabled
+    add = Mock()
+    await setup_number(Mock(), entry, add)
+    if enabled:
+        assert len(add.call_args.args[0]) == 2
+    else:
+        add.assert_not_called()
+    with patch.object(L2OptionsFlow, "config_entry", new_callable=PropertyMock, return_value=entry):
+        form = await L2OptionsFlow().async_step_init()
+        encoded = FlowManagerIndexView(Mock())._prepare_result_json(form)
+        assert [field["default"] for field in encoded["data_schema"]] == [enabled, interval]
+        result = await L2OptionsFlow().async_step_init(form["data_schema"]({}))
+        assert result["data"] == {"experimental_effects": enabled, "poll_interval": interval}
+    exported = await async_get_config_entry_diagnostics(Mock(data={}), entry)
+    assert exported["options"] == {"experimental_effects": enabled, "poll_interval": interval}
+    assert exported["runtime"]["polling_enabled"] is bool(interval)
+    transport.read_state.assert_not_called()
+    transport.send_update.assert_not_called()
+
+
+def test_effect_command_builder_is_enabled_by_default():
+    assert turn_on_params({}, effect="Reading")["mode"] == 7
+    assert turn_on_params({}, effect="Rhythm classic")["mode"] == 4

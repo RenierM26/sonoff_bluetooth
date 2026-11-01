@@ -27,9 +27,12 @@
   in those modules. Fresh-session readback must not reuse a command session's
   pre-command report or accept an ACK-only query as state.
 - Preserve per-mode speedXX/brightXX fields and construct mode-dependent commands
-  inside the coordinator operation lock. New effects/rhythm stay opt-in until
-  hardware-validated; do not imply standalone audio response from discrete config
-  commands alone. Number adjustments must not explicitly turn the strip on.
+  inside the coordinator operation lock. L2 effects/rhythm/speed/sound reaction
+  and 60-second polling have owner-reported live-HA validation. Do not extrapolate to every preset/slider value, firmware or
+  Internet-blocked operation. Number adjustments must not explicitly turn the
+  strip on.
+- Effects default on and polling defaults to 60 seconds. Preserve explicit saved
+  choices (false/0 included), legacy option key and stable entity unique IDs.
 
 - Reconfiguration/reauth must keep the same MAC/device ID; replacing hardware needs
   a new entry rather than rebinding old registry identities. Use data_updates.

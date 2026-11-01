@@ -8,7 +8,7 @@ sensors, extra services, dependencies, debug-logging switch or YAML are required
 ## Download
 
 1. Update/redownload **SONOFF Bluetooth** and restart HA so Python loads the new
-   diagnostics module. Current code version: **0.4.2**.
+   diagnostics module. Current code version: **0.5.0**.
 2. Open **Settings → Devices & services → SONOFF Bluetooth**.
 3. Open the entry's **⋮ → Download diagnostics**, or open its device and use
    **Download diagnostics** there.
@@ -22,7 +22,7 @@ integration's section is under `data`, with `diagnostics_schema: 2`.
 
 | Section | Contents |
 | --- | --- |
-| `options` | Experimental-controls flag and configured poll interval. No extra options are copied. |
+| `options` | Effect-controls flag and configured poll interval. No extra options are copied. |
 | `bluetooth` | Backend readiness, scanner counts, cached visibility/connectability, signal strength (dBm), count of connectable paths and their anonymous signal values. |
 | Identity / service checks | Boolean exact `ck_<deviceid>` match and whether the control service UUID appears in the cached advertisement. Neither the name/ID nor service/manufacturer payload is exported. A missing advertised UUID is not proof that GATT lacks the service. |
 | `runtime` | Reachability, availability, explicit-auth rejection flag, polling enabled and whether a local operation currently holds the lock. |
