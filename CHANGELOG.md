@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.2 — Native installation diagnostics
+
+- Expand native config-entry diagnostics and add a native device diagnostics hook.
+- Read-only HA Bluetooth-cache snapshot: scanner/connection-path counts, visibility,
+  signal strength, advertised control-service flag and identity-match boolean.
+  Never include scanner objects, identifiers, proxy names/hosts or raw advertising.
+- Separate latest read outcome from control outcome/coordinator update success so
+  an ACK cannot make a failed state read appear successful. Include in-progress,
+  polling, unknown/reported/assumed state and state-field-presence flags.
+- Downloads work without loaded runtime or Bluetooth readiness, never acquire the
+  operation lock or trigger a scan/connection/refresh/command, and sanitize unknown
+  outcome/error type names. No new dependencies, entities or config migrations.
+- Privacy/read-only/unloaded/in-flight regressions and documented download steps.
+
 ## 0.4.1 — HA developer-guidance review
 
 - Correct dynamic effect colour modes: preset effects expose brightness only,

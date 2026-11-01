@@ -39,3 +39,8 @@
   Keep legacy Solid input as an alias and allow effect-off + RGB scene restoration.
 - Only explicit AuthenticationError opens reauth; no prompts for timeouts/bad frames.
   Diagnostics must remain an allowlist without entry data or error-message dumps.
+
+- Diagnostics may read HA Bluetooth caches, never trigger scanning/GATT/cloud I/O
+  or wait for an operation lock. Whitelist scalar flags/counts/RSSI; no raw source
+  objects, identifiers, proxy names/hosts or exception text. Keep read/control
+  outcomes separate from coordinator update success (an ACK is not a state read).

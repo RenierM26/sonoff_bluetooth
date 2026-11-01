@@ -202,9 +202,14 @@ reports do not falsely trigger reauthentication. A key that fails before a valid
 auth result cannot reliably be distinguished from corrupt data; use Reconfigure
 if no native repair prompt appears.
 
-Use **Download diagnostics** on the integration for troubleshooting. The export
-whitelists operational flags and local options; it omits credentials/tokens,
-addresses, IDs, names, raw device data and exception messages.
+Use HA's native **Download diagnostics** action on either the integration entry
+or device page. See [diagnostics and troubleshooting](docs/DIAGNOSTICS.md).
+The integration payload includes cached Bluetooth visibility, signal/path counts,
+identity-match status (not the identity), read/control outcomes, state-field
+presence, availability/auth status and local options. It never initiates a scan,
+connection, refresh or light command. Credentials/tokens, identifiers, proxy names,
+hosts, raw advertisements/state and error messages are omitted. HA adds its usual
+system/integration version envelope.
 
 ### Experimental native effects and rhythm
 

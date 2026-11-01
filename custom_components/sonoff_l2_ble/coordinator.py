@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from bleak.exc import BleakError
 from homeassistant.components import bluetooth
@@ -30,6 +30,27 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+type ReadOutcome = Literal[
+    "not_attempted",
+    "in_progress",
+    "reported",
+    "auth_failed",
+    "connection_failed",
+    "invalid_report",
+    "cancelled",
+]
+type ControlOutcome = Literal[
+    "not_attempted",
+    "in_progress",
+    "acknowledged",
+    "auth_failed",
+    "connection_failed",
+    "protocol_error",
+    "invalid_request",
+    "cancelled",
+]
+
+
 class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
     """An actual report replaces stale data; an ACK only makes requested state assumed."""
 
@@ -48,6 +69,8 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.transport = transport
         self.experimental = bool(entry.options.get(CONF_EXPERIMENTAL, False))
         self.reported = False
+        self.last_read_outcome: ReadOutcome = "not_attempted"
+        self.last_control_outcome: ControlOutcome = "not_attempted"
         self.data = {}
         self.operation_lock = asyncio.Lock()
 
@@ -86,9 +109,14 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         async with self.operation_lock:
+            self.last_read_outcome = "in_progress"
             try:
                 data = await self.transport.read_state()
+            except asyncio.CancelledError:
+                self.last_read_outcome = "cancelled"
+                raise
             except AuthenticationError:
+                self.last_read_outcome = "auth_failed"
                 self.reported = False
                 self.auth_failed = True
                 raise ConfigEntryAuthFailed(
@@ -97,10 +125,12 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
                     translation_key="auth_failed",
                 ) from None
             except BleakError, TimeoutError, OSError:
+                self.last_read_outcome = "connection_failed"
                 self.reported = False
                 self.reachable = False
                 raise UpdateFailed("L2 state refresh failed; check Bluetooth proximity") from None
             except ProtocolError:
+                self.last_read_outcome = "invalid_report"
                 # Connected but missing/invalid state means UNKNOWN, not old state.
                 # An advertising command-capable strip can still accept controls.
                 self.data = {}
@@ -109,6 +139,7 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.reachable = True
             self.auth_failed = False
             self.reported = True
+            self.last_read_outcome = "reported"
             return data
 
     async def async_control(
@@ -119,14 +150,17 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # Build mode-dependent commands only after preceding reads/writes.
                 params = request(self.data) if callable(request) else request
             except ValueError:
+                self.last_control_outcome = "invalid_request"
                 raise ServiceValidationError(
                     "Invalid L2 colour/effect combination; check mode and experimental options",
                     translation_domain=DOMAIN,
                     translation_key="invalid_control",
                 ) from None
+            self.last_control_outcome = "in_progress"
             try:
                 await self.transport.send_update(params)
             except AuthenticationError:
+                self.last_control_outcome = "auth_failed"
                 self.reported = False
                 self.auth_failed = True
                 self.async_update_listeners()
@@ -137,10 +171,14 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
                     translation_key="auth_failed",
                 ) from None
             except asyncio.CancelledError:
+                self.last_control_outcome = "cancelled"
                 self.reported = False
                 self.async_update_listeners()
                 raise
             except (ProtocolError, BleakError, TimeoutError, OSError) as err:
+                self.last_control_outcome = (
+                    "protocol_error" if isinstance(err, ProtocolError) else "connection_failed"
+                )
                 # A lost ACK may mean the device changed despite our failed call.
                 self.reported = False
                 if not isinstance(err, ProtocolError):
@@ -154,4 +192,5 @@ class L2Coordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.reachable = True
             self.auth_failed = False
             self.reported = False
+            self.last_control_outcome = "acknowledged"
             self.async_set_updated_data({**self.data, **params})

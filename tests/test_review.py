@@ -193,7 +193,7 @@ async def test_diagnostics_whitelist_excludes_credentials_identifiers_and_error_
     entry.data = {**DATA, "token": "sensitive-token", "name": "private-room-name"}
     entry.options["unexpected_secret"] = "never-export"
     coordinator.last_exception = ProtocolError("do-not-echo")
-    result = await async_get_config_entry_diagnostics(Mock(), entry)
+    result = await async_get_config_entry_diagnostics(Mock(data={}), entry)
     encoded = json.dumps(result)
     for value in [
         *DATA.values(),
@@ -204,8 +204,8 @@ async def test_diagnostics_whitelist_excludes_credentials_identifiers_and_error_
     ]:
         assert value not in encoded
     assert result["runtime"]["last_error_type"] == "ProtocolError"
-    unloaded = SimpleNamespace(options={})
-    assert (await async_get_config_entry_diagnostics(Mock(), unloaded))["runtime"] is None
+    unloaded = SimpleNamespace(options={}, data={})
+    assert (await async_get_config_entry_diagnostics(Mock(data={}), unloaded))["runtime"] is None
 
 
 async def test_stalled_gatt_write_has_whole_session_deadline_and_releases_lock():
