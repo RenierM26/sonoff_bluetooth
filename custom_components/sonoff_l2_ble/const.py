@@ -9,3 +9,4 @@ CONF_EFFECTS_ENABLED = "experimental_effects"
 CONF_POLL_INTERVAL = "poll_interval"
 DEFAULT_EFFECTS_ENABLED = True
 DEFAULT_POLL_INTERVAL = 60
+CONF_MTU_WRITES = "mtu_writes"

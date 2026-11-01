@@ -20,6 +20,7 @@ from .const import (
     CONF_DEVICE_APIKEY,
     CONF_DEVICE_ID,
     CONF_EFFECTS_ENABLED,
+    CONF_MTU_WRITES,
     CONF_POLL_INTERVAL,
     DEFAULT_EFFECTS_ENABLED,
     DEFAULT_POLL_INTERVAL,
@@ -299,6 +300,7 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                             user_input.get(CONF_EFFECTS_ENABLED, DEFAULT_EFFECTS_ENABLED)
                         ),
                         CONF_POLL_INTERVAL: int(interval),
+                        CONF_MTU_WRITES: bool(user_input.get(CONF_MTU_WRITES, False)),
                     },
                 )
         return self.async_show_form(
@@ -321,6 +323,10 @@ class L2OptionsFlow(config_entries.OptionsFlow):
                             min=0, max=3600, step=30, mode=selector.NumberSelectorMode.BOX
                         )
                     ),
+                    vol.Required(
+                        CONF_MTU_WRITES,
+                        default=self.config_entry.options.get(CONF_MTU_WRITES, False),
+                    ): bool,
                 }
             ),
             errors=errors,

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 
-from .const import CONF_ACCOUNT_APIKEY, CONF_DEVICE_APIKEY, CONF_DEVICE_ID
+from .const import CONF_ACCOUNT_APIKEY, CONF_DEVICE_APIKEY, CONF_DEVICE_ID, CONF_MTU_WRITES
 from .protocol import ProtocolError
 from .transport import GattClient, L2Transport
 
@@ -19,7 +19,9 @@ if TYPE_CHECKING:
 type L2ConfigEntry = ConfigEntry[L2Coordinator]
 
 
-def make_transport(hass: HomeAssistant, data: Mapping[str, Any]) -> L2Transport:
+def make_transport(
+    hass: HomeAssistant, data: Mapping[str, Any], *, mtu_writes: bool = False
+) -> L2Transport:
     """Use HA's adapters, including existing active ESPHome Bluetooth proxies."""
     from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
     from homeassistant.components import bluetooth
@@ -49,7 +51,11 @@ def make_transport(hass: HomeAssistant, data: Mapping[str, Any]) -> L2Transport:
         return cast(GattClient, client)
 
     return L2Transport(
-        factory, data[CONF_DEVICE_ID], data[CONF_DEVICE_APIKEY], data[CONF_ACCOUNT_APIKEY]
+        factory,
+        data[CONF_DEVICE_ID],
+        data[CONF_DEVICE_APIKEY],
+        data[CONF_ACCOUNT_APIKEY],
+        mtu_writes=mtu_writes,
     )
 
 
@@ -59,7 +65,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: L2ConfigEntry) -> bool:
 
     from .coordinator import L2Coordinator
 
-    entry.runtime_data = L2Coordinator(hass, entry, make_transport(hass, entry.data))
+    entry.runtime_data = L2Coordinator(
+        hass,
+        entry,
+        make_transport(
+            hass, entry.data, mtu_writes=bool(entry.options.get(CONF_MTU_WRITES, False))
+        ),
+    )
     entry.runtime_data.async_track_presence()
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     # Best effort: an offline strip must not prevent adding its retry button/light.

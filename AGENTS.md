@@ -55,3 +55,10 @@
   optional for the single-maintainer workflow. Version tags are immutable through
   normal Git operations. Release only a green manifest-matching vX.Y.Z tag;
   verify release workflow, component ZIP and SHA256SUMS. See CONTRIBUTING.md.
+
+- Performance: update HA only after the matching successful ACK; early publication
+  may precede disconnect but both locks remain held through bounded cleanup.
+  No background cleanup tasks, permanent connection, blind retry or command replay.
+  Larger writes are explicitly opt-in until physically validated, capped by MTU
+  and backend limits. Timing diagnostics allowlist relative numbers/categories,
+  never payloads/identifiers; action completion still waits for cleanup.

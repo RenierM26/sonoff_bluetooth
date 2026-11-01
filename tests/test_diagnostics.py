@@ -71,7 +71,7 @@ async def test_cached_bluetooth_details_and_both_native_download_hooks_are_safe(
         result = await async_get_config_entry_diagnostics(Mock(), entry)
         device_result = await async_get_device_diagnostics(Mock(), entry, device)
     assert device_result == result
-    assert result["diagnostics_schema"] == 2
+    assert result["diagnostics_schema"] == 3
     assert result["bluetooth"] == {
         "status": "ready",
         "scanner_count": 3,
